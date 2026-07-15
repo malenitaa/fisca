@@ -33,7 +33,7 @@ export default function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          Facturación ARCA
+          Fisca
         </h1>
         <p className="mb-8 text-sm text-neutral-500 dark:text-neutral-400">
           Ingresá tu email y te mandamos un link para entrar.

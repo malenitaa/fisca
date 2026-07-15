@@ -1,4 +1,4 @@
-# Facturación ARCA
+# Fisca
 
 Web app minimalista para que un monotributista emita **Facturas C** con CAE
 usando los webservices de ARCA (ex AFIP) — sin sistema contable, sin

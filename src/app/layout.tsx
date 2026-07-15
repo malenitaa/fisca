@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Facturación ARCA",
+  title: "Fisca",
   description: "Facturación electrónica simple para monotributistas",
 };
 
