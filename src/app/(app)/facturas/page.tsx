@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NuevaFacturaForm } from "@/components/nueva-factura-form";
+import { MonotributoReminder } from "@/components/monotributo-reminder";
+import { periodoActual, periodoLabel } from "@/lib/monotributo";
 
 export default async function NuevaFacturaPage() {
   const supabase = await createClient();
@@ -18,8 +20,17 @@ export default async function NuevaFacturaPage() {
     redirect("/configuracion");
   }
 
+  const periodo = periodoActual();
+  const { data: pago } = await supabase
+    .from("monotributo_pagos")
+    .select("periodo")
+    .eq("user_id", user!.id)
+    .eq("periodo", periodo)
+    .maybeSingle();
+
   return (
     <div>
+      {!pago && <MonotributoReminder periodo={periodo} periodoLabel={periodoLabel(periodo)} />}
       <div className="mb-6 flex items-baseline justify-between">
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           Nueva factura C
