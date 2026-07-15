@@ -20,7 +20,16 @@ export default function LoginPage() {
     setErrorMessage("");
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Si la persona clickea el link del mail en vez de tipear el código,
+        // esto lo manda a la ruta que efectivamente intercambia el code por
+        // una sesión (ver src/app/auth/callback/route.ts). Sin esto, Supabase
+        // redirige a la Site URL "pelada" y el login queda a mitad de camino.
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
     if (error) {
       setStatus("error");
