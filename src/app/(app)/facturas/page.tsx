@@ -21,12 +21,14 @@ export default async function NuevaFacturaPage() {
   return (
     <div>
       <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900">Nueva factura C</h1>
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          Nueva factura C
+        </h1>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             config.ambiente === "produccion"
-              ? "bg-amber-100 text-amber-800"
-              : "bg-neutral-100 text-neutral-600"
+              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+              : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
           }`}
         >
           {config.ambiente === "produccion" ? "Producción" : "Homologación"}

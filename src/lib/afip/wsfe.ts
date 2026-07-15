@@ -3,6 +3,12 @@ import { AfipError } from "./errors";
 import { asArray, callWsfeSoap, formatAfipIssues } from "./soap";
 import { CBTE_TIPO_FACTURA_C, type FacturaItem, type NuevaFacturaInput } from "./types";
 
+export interface ComprobanteAsociado {
+  cbteTipo: number;
+  puntoVenta: number;
+  numeroComprobante: number;
+}
+
 interface AuthParams {
   token: string;
   sign: string;
@@ -45,13 +51,14 @@ export async function getProximoNumeroComprobante(params: {
   ambiente: Ambiente;
   auth: AuthParams;
   puntoVenta: number;
+  cbteTipo?: number;
 }): Promise<number> {
-  const { ambiente, auth, puntoVenta } = params;
+  const { ambiente, auth, puntoVenta, cbteTipo = CBTE_TIPO_FACTURA_C } = params;
 
   const body = `<ar:FECompUltimoAutorizado>
     ${authBlock(auth)}
     <ar:PtoVta>${puntoVenta}</ar:PtoVta>
-    <ar:CbteTipo>${CBTE_TIPO_FACTURA_C}</ar:CbteTipo>
+    <ar:CbteTipo>${cbteTipo}</ar:CbteTipo>
   </ar:FECompUltimoAutorizado>`;
 
   const responseBody = await callWsfeSoap({
@@ -87,7 +94,8 @@ export interface CaeResult {
   observaciones: string[];
 }
 
-/** Pide el CAE para una factura C con un solo detalle (`FeDetReq` de un ítem). */
+/** Pide el CAE para un comprobante (Factura C o Nota de Crédito C) con un solo
+ * detalle (`FeDetReq` de un ítem). */
 export async function solicitarCae(params: {
   ambiente: Ambiente;
   auth: AuthParams;
@@ -95,8 +103,19 @@ export async function solicitarCae(params: {
   numeroComprobante: number;
   factura: NuevaFacturaInput;
   importeTotal: number;
+  cbteTipo?: number;
+  comprobantesAsociados?: ComprobanteAsociado[];
 }): Promise<CaeResult> {
-  const { ambiente, auth, puntoVenta, numeroComprobante, factura, importeTotal } = params;
+  const {
+    ambiente,
+    auth,
+    puntoVenta,
+    numeroComprobante,
+    factura,
+    importeTotal,
+    cbteTipo = CBTE_TIPO_FACTURA_C,
+    comprobantesAsociados = [],
+  } = params;
 
   const fechaEmision = todayYYYYMMDD();
   const esServicio = factura.concepto === 2 || factura.concepto === 3;
@@ -108,15 +127,32 @@ export async function solicitarCae(params: {
     <ar:FchVtoPago>${toAfipDate(factura.fechaVtoPago ?? "")}</ar:FchVtoPago>`
     : "";
 
-  // Factura C: el monotributista no discrimina IVA, así que todo el importe
-  // va como "neto" y el resto de los importes discriminados quedan en 0.
+  const cbtesAsocBlock =
+    comprobantesAsociados.length > 0
+      ? `
+          <ar:CbtesAsoc>
+            ${comprobantesAsociados
+              .map(
+                (c) => `<ar:CbteAsoc>
+              <ar:Tipo>${c.cbteTipo}</ar:Tipo>
+              <ar:PtoVta>${c.puntoVenta}</ar:PtoVta>
+              <ar:Nro>${c.numeroComprobante}</ar:Nro>
+            </ar:CbteAsoc>`
+              )
+              .join("\n            ")}
+          </ar:CbtesAsoc>`
+      : "";
+
+  // Factura C / Nota de Crédito C: el monotributista no discrimina IVA, así
+  // que todo el importe va como "neto" y el resto de los importes
+  // discriminados quedan en 0.
   const body = `<ar:FECAESolicitar>
     ${authBlock(auth)}
     <ar:FeCAEReq>
       <ar:FeCabReq>
         <ar:CantReg>1</ar:CantReg>
         <ar:PtoVta>${puntoVenta}</ar:PtoVta>
-        <ar:CbteTipo>${CBTE_TIPO_FACTURA_C}</ar:CbteTipo>
+        <ar:CbteTipo>${cbteTipo}</ar:CbteTipo>
       </ar:FeCabReq>
       <ar:FeDetReq>
         <ar:FECAEDetRequest>
@@ -131,7 +167,7 @@ export async function solicitarCae(params: {
           <ar:ImpNeto>${importeTotal.toFixed(2)}</ar:ImpNeto>
           <ar:ImpOpEx>0.00</ar:ImpOpEx>
           <ar:ImpIVA>0.00</ar:ImpIVA>
-          <ar:ImpTrib>0.00</ar:ImpTrib>${fechasServicio}
+          <ar:ImpTrib>0.00</ar:ImpTrib>${fechasServicio}${cbtesAsocBlock}
           <ar:MonId>PES</ar:MonId>
           <ar:MonCotiz>1</ar:MonCotiz>
           <ar:CondicionIVAReceptorId>${factura.condicionIvaReceptorId}</ar:CondicionIVAReceptorId>

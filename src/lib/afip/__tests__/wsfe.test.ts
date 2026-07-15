@@ -16,6 +16,18 @@ function stubFetchOnce(xml: string) {
   );
 }
 
+function stubFetchOnceCapturing(xml: string) {
+  let capturedBody = "";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init: RequestInit) => {
+      capturedBody = init.body as string;
+      return new Response(xml, { status: 200 });
+    })
+  );
+  return () => capturedBody;
+}
+
 describe("getProximoNumeroComprobante", () => {
   it("devuelve último autorizado + 1", async () => {
     stubFetchOnce(`<?xml version="1.0"?>
@@ -173,5 +185,43 @@ describe("solicitarCae", () => {
         importeTotal: 1000,
       })
     ).rejects.toBeInstanceOf(AfipError);
+  });
+
+  it("manda CbteTipo 13 y el CbtesAsoc correcto al anular con Nota de Crédito", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    const result = await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      cbteTipo: 13,
+      comprobantesAsociados: [{ cbteTipo: 11, puntoVenta: 1, numeroComprobante: 43 }],
+      factura: baseFactura,
+      importeTotal: 1000,
+    });
+
+    expect(result.cae).toBe("1234567890");
+
+    const body = getBody();
+    expect(body).toContain("<ar:CbteTipo>13</ar:CbteTipo>");
+    expect(body).toMatch(/<ar:CbtesAsoc>[\s\S]*<ar:Tipo>11<\/ar:Tipo>[\s\S]*<\/ar:CbtesAsoc>/);
+    expect(body).toContain("<ar:PtoVta>1</ar:PtoVta>");
+    expect(body).toContain("<ar:Nro>43</ar:Nro>");
   });
 });

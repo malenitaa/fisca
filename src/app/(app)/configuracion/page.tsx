@@ -15,8 +15,10 @@ export default async function ConfiguracionPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-lg font-semibold text-neutral-900">Configuración</h1>
-      <p className="mb-6 text-sm text-neutral-500">
+      <h1 className="mb-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        Configuración
+      </h1>
+      <p className="mb-6 text-sm text-neutral-500 dark:text-neutral-400">
         Se carga una sola vez. El certificado y la clave privada se guardan cifrados y nunca se
         muestran de nuevo en pantalla.
       </p>
