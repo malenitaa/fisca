@@ -1,6 +1,8 @@
-/** Tipo de comprobante soportado. Por ahora solo Factura C (lo único que un
- * monotributista puede emitir por el régimen general de WSFEv1). */
+/** Tipos de comprobante soportados: Factura C y su Nota de Crédito (para
+ * anular una factura emitida por error). Son los únicos que un
+ * monotributista puede emitir por el régimen general de WSFEv1. */
 export const CBTE_TIPO_FACTURA_C = 11;
+export const CBTE_TIPO_NOTA_CREDITO_C = 13;
 
 export type Concepto = 1 | 2 | 3; // 1 Productos, 2 Servicios, 3 Productos y Servicios
 

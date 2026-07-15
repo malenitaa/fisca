@@ -72,18 +72,18 @@ export function ConfiguracionForm({ existing }: { existing: ExistingConfig | nul
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {ambiente === "produccion" && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
           Ambiente de <strong>producción</strong>: las facturas que emitas van a ser reales ante
           ARCA.
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">Ambiente</label>
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Ambiente</label>
         <select
           value={ambiente}
           onChange={(e) => setAmbiente(e.target.value as "homologacion" | "produccion")}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         >
           <option value="homologacion">Homologación (testing)</option>
           <option value="produccion">Producción</option>
@@ -91,41 +91,41 @@ export function ConfiguracionForm({ existing }: { existing: ExistingConfig | nul
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">CUIT</label>
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">CUIT</label>
         <input
           required
           value={cuit}
           onChange={(e) => setCuit(e.target.value)}
           placeholder="20111111112"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Razón social / nombre (opcional, aparece en el PDF)
         </label>
         <input
           value={razonSocial}
           onChange={(e) => setRazonSocial(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">Punto de venta</label>
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Punto de venta</label>
         <input
           required
           type="number"
           min={1}
           value={puntoVenta}
           onChange={(e) => setPuntoVenta(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Certificado (.crt) {existing && "— ya cargado, subilo de nuevo solo si querés reemplazarlo"}
         </label>
         <input
@@ -137,7 +137,7 @@ export function ConfiguracionForm({ existing }: { existing: ExistingConfig | nul
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700">
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Clave privada (.key) {existing && "— ya cargada, subila de nuevo solo si querés reemplazarla"}
         </label>
         <input
@@ -151,15 +151,17 @@ export function ConfiguracionForm({ existing }: { existing: ExistingConfig | nul
       <button
         type="submit"
         disabled={status === "saving"}
-        className="w-full rounded-md bg-neutral-900 px-3 py-2.5 font-medium text-white disabled:opacity-50"
+        className="w-full rounded-md bg-neutral-900 px-3 py-2.5 font-medium text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
       >
         {status === "saving" ? "Guardando..." : "Guardar"}
       </button>
 
       {status === "saved" && (
-        <p className="text-sm text-green-700">Configuración guardada.</p>
+        <p className="text-sm text-green-700 dark:text-green-400">Configuración guardada.</p>
       )}
-      {status === "error" && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {status === "error" && (
+        <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+      )}
     </form>
   );
 }

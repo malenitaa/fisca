@@ -31,6 +31,21 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     .eq("user_id", user.id)
     .maybeSingle();
 
+  let comprobanteAsociado: { puntoVenta: number; numeroComprobante: number } | null = null;
+  if (invoice.comprobante_asociado_id) {
+    const { data: original } = await supabase
+      .from("invoices")
+      .select("punto_venta, numero_comprobante")
+      .eq("id", invoice.comprobante_asociado_id)
+      .maybeSingle();
+    if (original) {
+      comprobanteAsociado = {
+        puntoVenta: original.punto_venta,
+        numeroComprobante: original.numero_comprobante,
+      };
+    }
+  }
+
   const qrDataUrl = await generarQrDataUrl({
     cuitEmisor: config?.cuit ?? "",
     fechaEmision: invoice.fecha_emision,
@@ -44,6 +59,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   });
 
   const pdfBuffer = await renderInvoicePdf({
+    cbteTipo: invoice.cbte_tipo,
     emisorCuit: config?.cuit ?? "",
     emisorRazonSocial: config?.razon_social ?? "",
     puntoVenta: invoice.punto_venta,
@@ -58,6 +74,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     cae: invoice.cae,
     caeVencimiento: invoice.cae_vencimiento,
     qrDataUrl,
+    comprobanteAsociado,
   });
 
   return new NextResponse(new Uint8Array(pdfBuffer), {

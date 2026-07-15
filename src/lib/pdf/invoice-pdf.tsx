@@ -1,5 +1,10 @@
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
-import { CONDICION_IVA_RECEPTOR, DOC_TIPOS, type FacturaItem } from "@/lib/afip/types";
+import {
+  CBTE_TIPO_NOTA_CREDITO_C,
+  CONDICION_IVA_RECEPTOR,
+  DOC_TIPOS,
+  type FacturaItem,
+} from "@/lib/afip/types";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
@@ -34,6 +39,7 @@ const styles = StyleSheet.create({
 });
 
 export interface InvoicePdfData {
+  cbteTipo: number;
   emisorCuit: string;
   emisorRazonSocial: string;
   puntoVenta: number;
@@ -48,6 +54,7 @@ export interface InvoicePdfData {
   cae: string;
   caeVencimiento: string;
   qrDataUrl: string;
+  comprobanteAsociado: { puntoVenta: number; numeroComprobante: number } | null;
 }
 
 function fmtMoney(n: number): string {
@@ -63,22 +70,31 @@ function condicionIvaLabel(value: number): string {
 }
 
 function InvoiceDocument(data: InvoicePdfData) {
+  const esNotaCredito = data.cbteTipo === CBTE_TIPO_NOTA_CREDITO_C;
+  const titulo = esNotaCredito ? "NOTA DE CRÉDITO C" : "FACTURA C";
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.title}>{data.emisorRazonSocial || "Factura C"}</Text>
+            <Text style={styles.title}>{data.emisorRazonSocial || titulo}</Text>
             <Text>CUIT: {data.emisorCuit}</Text>
             <Text>Condición frente al IVA: Responsable Monotributo</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontSize: 14, fontWeight: 700 }}>FACTURA C</Text>
+            <Text style={{ fontSize: 14, fontWeight: 700 }}>{titulo}</Text>
             <Text>
               N° {String(data.puntoVenta).padStart(5, "0")}-
               {String(data.numeroComprobante).padStart(8, "0")}
             </Text>
             <Text>Fecha de emisión: {data.fechaEmision}</Text>
+            {data.comprobanteAsociado && (
+              <Text>
+                Anula a Factura C N° {String(data.comprobanteAsociado.puntoVenta).padStart(5, "0")}-
+                {String(data.comprobanteAsociado.numeroComprobante).padStart(8, "0")}
+              </Text>
+            )}
           </View>
         </View>
 

@@ -16,7 +16,12 @@ historial, listo.
    precio. Valida todo antes de mandarlo a ARCA.
 4. Al confirmar, la app pide el CAE a WSFEv1 y genera un PDF con los datos
    legales (CAE, vencimiento, QR de ARCA).
-5. **Historial** de facturas emitidas, con re-descarga del PDF.
+5. **Historial** de facturas emitidas, con re-descarga del PDF y cantidad
+   total de comprobantes.
+6. **Anular una factura mal emitida**: emite la Nota de Crédito C asociada
+   (no se puede "borrar" un comprobante con CAE, ver `/ayuda`).
+7. **Modo oscuro** (según preferencia del sistema, con toggle manual) y una
+   página de **Ayuda** con preguntas frecuentes (no es un chatbot).
 
 ### Por qué no hay opción "Factura D" ni "Factura E" en el formulario
 
@@ -122,8 +127,9 @@ privada tenés que generar un certificado nuevo.
 ### 2. Supabase
 
 1. Creá un proyecto en [supabase.com](https://supabase.com).
-2. Corré la migración de `supabase/migrations/0001_init.sql` (SQL Editor, o
-   `supabase db push` si usás la CLI).
+2. Corré las migraciones de `supabase/migrations/` en orden (`0001_init.sql`,
+   `0002_notas_credito.sql`) en el SQL Editor, o `supabase db push` si usás
+   la CLI.
 3. En Authentication → Providers, dejá habilitado el login por Email
    (magic link / OTP). No hace falta configurar contraseña.
 4. Copiá `Project URL` y `anon public key` a tu `.env.local`.
