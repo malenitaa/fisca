@@ -22,6 +22,10 @@ historial, listo.
    (no se puede "borrar" un comprobante con CAE, ver `/ayuda`).
 7. **Modo oscuro** (según preferencia del sistema, con toggle manual) y una
    página de **Ayuda** con preguntas frecuentes (no es un chatbot).
+8. **Recordatorio de pago del monotributo**: un aviso simple en la pantalla
+   principal con un botón "Ya pagué" y un link directo a ARCA para generar
+   el VEP. No automatiza el pago (eso implicaría manejar tu Clave Fiscal
+   real, ver sección de seguridad).
 
 ### Por qué no hay opción "Factura D" ni "Factura E" en el formulario
 
@@ -128,8 +132,8 @@ privada tenés que generar un certificado nuevo.
 
 1. Creá un proyecto en [supabase.com](https://supabase.com).
 2. Corré las migraciones de `supabase/migrations/` en orden (`0001_init.sql`,
-   `0002_notas_credito.sql`) en el SQL Editor, o `supabase db push` si usás
-   la CLI.
+   `0002_notas_credito.sql`, `0003_monotributo_pagos.sql`) en el SQL Editor,
+   o `supabase db push` si usás la CLI.
 3. En Authentication → Providers, dejá habilitado el login por Email
    (magic link / OTP). No hace falta configurar contraseña.
 4. Copiá `Project URL` y `anon public key` a tu `.env.local`.
