@@ -1,4 +1,4 @@
-# Arquitectura de Facturación ARCA
+# Arquitectura de Fisca
 
 Este documento explica **cómo está armado el sistema y por qué**, pensado
 para alguien que necesita evaluarlo técnicamente (por ejemplo, antes de
