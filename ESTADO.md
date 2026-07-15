@@ -8,12 +8,10 @@ hecho, qué falta, y decisiones tomadas) — no es documentación de usuario
 
 - **Nombre de la app**: "Fisca" (ya actualizado en el código, título de la
   pestaña, y docs).
-- **Repo de GitHub**: `malenitaa/facturacionarca` — el nombre técnico del
-  repo y del proyecto de Vercel **todavía dicen "facturacionarca"**, no se
-  renombraron. Pendiente de decisión: si se renombran, hay que volver a
-  cargar las Redirect URLs en Supabase (Authentication → URL
-  Configuration), igual que la vez que se armó el deploy.
-- **Deploy**: <https://facturacionarca.vercel.app>
+- **Repo de GitHub**: `malenitaa/fisca` (renombrado de `facturacionarca`).
+- **Deploy**: <https://fisca.vercel.app> (renombrado de
+  `facturacionarca.vercel.app`; el proyecto de Vercel y el Site
+  URL/Redirect URLs de Supabase ya se actualizaron a esta URL nueva).
 - **Rama de trabajo**: `claude/monotributista-afip-invoicing-est2pz` — es
   la que está deployada en Vercel. `main` sigue vacía, no se mergeó nada
   todavía.
@@ -74,8 +72,6 @@ hecho, qué falta, y decisiones tomadas) — no es documentación de usuario
 5. (Opcional, no bloqueante) Terminar de configurar Resend si en algún
    momento se quiere volver a intentar el login por código en vez de
    link.
-6. (Opcional) Decidir si renombrar el repo/deploy de "facturacionarca" a
-   "fisca".
 
 ## Pendiente de producto, evaluado pero no construido
 
