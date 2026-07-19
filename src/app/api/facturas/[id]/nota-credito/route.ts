@@ -4,7 +4,11 @@ import { decryptSecret } from "@/lib/crypto";
 import { getTicketAcceso } from "@/lib/afip/ta-cache";
 import { getProximoNumeroComprobante, solicitarCae } from "@/lib/afip/wsfe";
 import { AfipError } from "@/lib/afip/errors";
-import { CBTE_TIPO_NOTA_CREDITO_C } from "@/lib/afip/types";
+import {
+  CBTE_TIPO_FACTURA_E,
+  CBTE_TIPO_NOTA_CREDITO_C,
+  CBTE_TIPO_NOTA_CREDITO_E,
+} from "@/lib/afip/types";
 import type { Ambiente } from "@/lib/afip/config";
 
 /** Anula una factura C emitida por error emitiendo la Nota de Crédito C asociada. */
@@ -34,6 +38,21 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     return NextResponse.json(
       { error: "Este comprobante ya es una Nota de Crédito, no se puede anular." },
       { status: 400 }
+    );
+  }
+
+  // Bloqueo: la anulación de Factura E (via NC E) usa WSFEXv1 — todavía no
+  // está implementado. Se avisa explícitamente para no confundir al usuario.
+  if (
+    original.cbte_tipo === CBTE_TIPO_FACTURA_E ||
+    original.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "La anulación de Facturas E todavía no está implementada. Pedile ayuda al soporte o esperá la próxima versión.",
+      },
+      { status: 501 }
     );
   }
 

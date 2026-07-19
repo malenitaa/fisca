@@ -1,8 +1,58 @@
-/** Tipos de comprobante soportados: Factura C y su Nota de Crédito (para
- * anular una factura emitida por error). Son los únicos que un
- * monotributista puede emitir por el régimen general de WSFEv1. */
+/** Tipos de comprobante soportados por la app:
+ *
+ * - **Factura C / NC C** (WSFEv1): mercado interno, en pesos, únicos
+ *   que un monotributista puede emitir para clientes locales.
+ * - **Factura E / NC E** (WSFEXv1): exportación de servicios (o bienes),
+ *   típicamente en dólares. Un monotributista habilitado como exportador
+ *   puede emitirlas para clientes del exterior (ej. Deel, Upwork).
+ */
 export const CBTE_TIPO_FACTURA_C = 11;
 export const CBTE_TIPO_NOTA_CREDITO_C = 13;
+export const CBTE_TIPO_FACTURA_E = 19;
+export const CBTE_TIPO_NOTA_CREDITO_E = 21;
+
+/** Monedas aceptadas por WSFEXv1. Los códigos son los de AFIP
+ * (`FEXGetPARAM_MON`). USD es la más común para contractors por Deel. */
+export const MONEDAS = [
+  { value: "DOL", label: "Dólar estadounidense (USD)", symbol: "US$" },
+  { value: "060", label: "Euro (EUR)", symbol: "€" },
+  { value: "021", label: "Libra esterlina (GBP)", symbol: "£" },
+  { value: "012", label: "Real (BRL)", symbol: "R$" },
+] as const;
+
+export type MonedaId = (typeof MONEDAS)[number]["value"];
+
+/** Tipo de exportación (WSFEXv1 `Tipo_expo`). */
+export const TIPO_EXPO = [
+  { value: 1, label: "Exportación de servicios" },
+  { value: 2, label: "Exportación de bienes" },
+  { value: 4, label: "Otros" },
+] as const;
+
+/** Idioma del comprobante en Factura E (WSFEXv1 `Idioma_cbte`). */
+export const IDIOMA_CBTE = [
+  { value: 1, label: "Español" },
+  { value: 2, label: "Inglés" },
+  { value: 3, label: "Portugués" },
+] as const;
+
+/** Países de destino más frecuentes para contractors argentinos.
+ * `codigoPais` es el "Dst_cmp" de AFIP y `cuitPais` es el "Cuit_pais_cliente"
+ * que AFIP asigna a cada país (persona jurídica). Lista incompleta pero
+ * cubre los casos reales de Deel/Upwork. */
+export const PAISES = [
+  { codigoPais: 200, cuitPais: "50000000059", label: "Estados Unidos" },
+  { codigoPais: 212, cuitPais: "55000000067", label: "Reino Unido" },
+  { codigoPais: 218, cuitPais: "55000004744", label: "Alemania" },
+  { codigoPais: 224, cuitPais: "55000005449", label: "Francia" },
+  { codigoPais: 221, cuitPais: "55000004485", label: "España" },
+  { codigoPais: 249, cuitPais: "55000006356", label: "Países Bajos" },
+  { codigoPais: 203, cuitPais: "55000015310", label: "Canadá" },
+  { codigoPais: 202, cuitPais: "55000007085", label: "México" },
+  { codigoPais: 105, cuitPais: "50000000521", label: "Brasil" },
+  { codigoPais: 219, cuitPais: "55000009381", label: "Italia" },
+  { codigoPais: 999, cuitPais: "55000000000", label: "Otro (verificar en ARCA)" },
+] as const;
 
 export type Concepto = 1 | 2 | 3; // 1 Productos, 2 Servicios, 3 Productos y Servicios
 

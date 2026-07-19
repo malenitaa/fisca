@@ -64,3 +64,19 @@ export const nuevaFacturaSchema = z
   });
 
 export type NuevaFacturaFormInput = z.infer<typeof nuevaFacturaSchema>;
+
+/** Schema para Factura E (exportación de servicios/bienes). */
+export const nuevaFacturaESchema = z.object({
+  clienteNombre: z.string().trim().min(1, "Falta el nombre del cliente.").max(200),
+  clientePais: z.coerce.number().int().min(1),
+  clienteCuitPais: z.string().trim().min(1, "Falta el CUIT del país del cliente."),
+  clienteDomicilio: z.string().trim().max(300).optional(),
+  clienteIdImpositivo: z.string().trim().max(50).optional(),
+  monedaId: z.string().trim().min(3).max(4),
+  monedaCotizacion: z.coerce.number().positive("La cotización debe ser positiva."),
+  tipoExpo: z.coerce.number().int().refine((v) => [1, 2, 4].includes(v)),
+  idiomaCbte: z.coerce.number().int().refine((v) => [1, 2, 3].includes(v)),
+  items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
+});
+
+export type NuevaFacturaEFormInput = z.infer<typeof nuevaFacturaESchema>;

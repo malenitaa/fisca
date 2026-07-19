@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CBTE_TIPO_NOTA_CREDITO_C } from "@/lib/afip/types";
+import {
+  CBTE_TIPO_FACTURA_E,
+  CBTE_TIPO_NOTA_CREDITO_C,
+  CBTE_TIPO_NOTA_CREDITO_E,
+  MONEDAS,
+} from "@/lib/afip/types";
 import { AnularFacturaButton } from "@/components/anular-factura-button";
 
 interface Invoice {
@@ -12,14 +17,33 @@ interface Invoice {
   fecha_emision: string;
   cliente_nombre: string | null;
   cliente_doc_nro: string | null;
-  cliente_doc_tipo: number;
+  cliente_doc_tipo: number | null;
   importe_total: number;
   ambiente: string;
   comprobante_asociado_id: string | null;
+  moneda?: string;
+}
+
+function badgeForTipo(cbteTipo: number): string {
+  switch (cbteTipo) {
+    case CBTE_TIPO_NOTA_CREDITO_C:
+      return "NC C";
+    case CBTE_TIPO_FACTURA_E:
+      return "Factura E";
+    case CBTE_TIPO_NOTA_CREDITO_E:
+      return "NC E";
+    default:
+      return "Factura C";
+  }
+}
+
+function monedaSimbolo(value?: string): string {
+  if (!value || value === "PES") return "$";
+  return MONEDAS.find((m) => m.value === value)?.symbol ?? value;
 }
 
 type Estado = "todos" | "validos" | "anulados";
-type Tipo = "todos" | "factura" | "nota";
+type Tipo = "todos" | "factura_c" | "factura_e" | "nota";
 
 const MESES = [
   "Ene",
@@ -62,8 +86,11 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
   const filtered = useMemo(() => {
     return invoices.filter((inv) => {
       if (periodo !== "todos" && !inv.fecha_emision.startsWith(periodo)) return false;
-      const esNC = inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C;
-      if (tipo === "factura" && esNC) return false;
+      const esNC =
+        inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C ||
+        inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E;
+      if (tipo === "factura_c" && inv.cbte_tipo !== 11) return false;
+      if (tipo === "factura_e" && inv.cbte_tipo !== CBTE_TIPO_FACTURA_E) return false;
       if (tipo === "nota" && !esNC) return false;
       const anulada = idsAnulados.has(inv.id);
       if (estado === "anulados" && !anulada) return false;
@@ -107,7 +134,8 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 dark:border-neutral-700 dark:bg-neutral-900"
         >
           <option value="todos">Tipo</option>
-          <option value="factura">Facturas</option>
+          <option value="factura_c">Factura C</option>
+          <option value="factura_e">Factura E</option>
           <option value="nota">Notas de crédito</option>
         </select>
       </div>
@@ -130,8 +158,14 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
       ) : (
         <div className="divide-y divide-neutral-200 border-b border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
           {filtered.map((inv) => {
-            const esNotaCredito = inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C;
+            const esNotaCredito =
+              inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C ||
+              inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E;
+            const esE =
+              inv.cbte_tipo === CBTE_TIPO_FACTURA_E ||
+              inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E;
             const estaAnulada = idsAnulados.has(inv.id);
+            const simbolo = monedaSimbolo(inv.moneda);
             return (
               <div
                 key={inv.id}
@@ -144,7 +178,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                       {String(inv.numero_comprobante).padStart(8, "0")}
                     </span>
                     <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                      {esNotaCredito ? "NC C" : "Factura C"}
+                      {badgeForTipo(inv.cbte_tipo)}
                     </span>
                     {estaAnulada && (
                       <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
@@ -159,14 +193,19 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                   </p>
                   <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
                     {inv.fecha_emision} ·{" "}
-                    {inv.cliente_doc_tipo === 99
+                    {esE
+                      ? inv.cliente_nombre || "Cliente extranjero"
+                      : inv.cliente_doc_tipo === 99
                       ? "Consumidor Final"
                       : inv.cliente_nombre || inv.cliente_doc_nro}
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-4 sm:justify-end">
                   <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    ${Number(inv.importe_total).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    {simbolo}
+                    {Number(inv.importe_total).toLocaleString("es-AR", {
+                      minimumFractionDigits: 2,
+                    })}
                   </span>
                   <a
                     href={`/api/facturas/${inv.id}/pdf`}
@@ -175,7 +214,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                   >
                     PDF
                   </a>
-                  {!esNotaCredito && !estaAnulada && (
+                  {!esNotaCredito && !esE && !estaAnulada && (
                     <AnularFacturaButton
                       facturaId={inv.id}
                       numero={`${String(inv.punto_venta).padStart(5, "0")}-${String(
