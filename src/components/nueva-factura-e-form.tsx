@@ -405,6 +405,7 @@ export function NuevaFacturaEForm() {
                   <input
                     value={item.descripcion}
                     onChange={(e) => updateItem(index, { descripcion: e.target.value })}
+                    placeholder="Descripción"
                     autoCapitalize="sentences"
                     spellCheck
                     className="flex-1 border-0 bg-transparent p-0 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
@@ -432,6 +433,7 @@ export function NuevaFacturaEForm() {
                     min={0}
                     step="any"
                     inputMode="decimal"
+                    placeholder="Precio unitario"
                     className="flex-1 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
                   />
                   {items.length > 1 && (
