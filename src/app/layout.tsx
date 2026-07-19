@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { themeInitScript } from "@/lib/theme";
+import { CapacitorDeepLink } from "@/components/capacitor-deep-link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,7 +47,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <CapacitorDeepLink />
+        {children}
+      </body>
     </html>
   );
 }
