@@ -15,8 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fisca",
-  description: "Facturación electrónica simple para monotributistas",
+  metadataBase: new URL("https://fisca.vercel.app"),
+  title: {
+    default: "Fisca — Facturación electrónica ARCA para monotributistas",
+    template: "%s · Fisca",
+  },
+  description:
+    "Emití Facturas C y E con CAE real de ARCA desde el celular en 30 segundos. Para monotributistas argentinos, incluyendo exportación de servicios (Deel, Upwork).",
   appleWebApp: {
     title: "Fisca",
     capable: true,

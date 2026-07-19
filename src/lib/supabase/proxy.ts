@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = [
+const PUBLIC_PATHS_STARTSWITH = [
   "/login",
   "/auth/callback",
   // Rutas del PWA que Safari/Chrome piden sin sesión para reconocer
@@ -12,6 +12,9 @@ const PUBLIC_PATHS = [
   "/icon",
   "/favicon",
 ];
+
+/** Rutas que sirven marketing público (landing) — SEO indexable, sin sesión. */
+const PUBLIC_PATHS_EXACT = ["/"];
 
 /** Refresca la sesión de Supabase y redirige a /login si no hay usuario autenticado. */
 export async function updateSession(request: NextRequest) {
@@ -42,7 +45,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicPath = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  const path = request.nextUrl.pathname;
+  const isPublicPath =
+    PUBLIC_PATHS_STARTSWITH.some((p) => path.startsWith(p)) ||
+    PUBLIC_PATHS_EXACT.includes(path);
 
   if (!user && !isPublicPath) {
     const loginUrl = request.nextUrl.clone();
