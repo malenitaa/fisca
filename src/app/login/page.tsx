@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "ratelimit">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(e: FormEvent) {
@@ -14,11 +15,10 @@ export default function LoginPage() {
     setErrorMessage("");
 
     const supabase = createClient();
-    // Cuando la web corre adentro del shell nativo de Capacitor
-    // (`window.Capacitor.isNativePlatform`), el magic link tiene que
-    // volver por el URL scheme `fisca://` para reabrir la app. En el
-    // navegador o en el PWA es un no-op — sigue el flujo web normal.
-    const capacitor = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    // Dentro del shell nativo de Capacitor el magic link tiene que volver
+    // por fisca:// para reabrir la app. En browser/PWA es no-op.
+    const capacitor = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
+      .Capacitor;
     const isNative = capacitor?.isNativePlatform?.() ?? false;
     const emailRedirectTo = isNative
       ? "fisca://auth-callback"
@@ -30,29 +30,63 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setStatus("error");
-      setErrorMessage(error.message);
+      // Supabase free plan tiene un rate limit de 3 mails/hora por proyecto.
+      // Cuando lo pisamos, devuelve el mensaje "email rate limit exceeded".
+      // Lo tratamos como estado propio para explicarle a la usuaria la salida.
+      if (/rate limit/i.test(error.message)) {
+        setStatus("ratelimit");
+      } else {
+        setStatus("error");
+        setErrorMessage(error.message);
+      }
       return;
     }
     setStatus("sent");
   }
 
   return (
-    <main className="flex h-dvh items-center justify-center overflow-hidden px-4">
+    <main
+      className="fixed inset-0 flex flex-col items-center justify-center px-6"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
       <div className="w-full max-w-sm">
         <h1 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          Fisca
+          Entrar a Fisca
         </h1>
         <p className="mb-8 text-sm text-neutral-500 dark:text-neutral-400">
           Ingresá tu email y te mandamos un link para entrar.
         </p>
 
-        {status === "sent" ? (
+        {status === "sent" && (
           <p className="rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
-            Te enviamos un link de acceso a <strong>{email}</strong>. Abrilo desde el mismo
-            dispositivo/navegador donde lo pediste.
+            Te mandamos el link a <strong>{email}</strong>. Abrilo desde el mismo
+            dispositivo.
           </p>
-        ) : (
+        )}
+
+        {status === "ratelimit" && (
+          <div className="space-y-4">
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+              <p className="mb-2 font-medium">Se llegó al límite de mails por ahora.</p>
+              <p>
+                Supabase (nuestro proveedor de auth) permite 3 mails por hora en el plan
+                gratis. Reintentá en un rato — o entrá sin email creando una cuenta
+                anónima que después podés vincular.
+              </p>
+            </div>
+            <Link
+              href="/signup"
+              className="block rounded-xl bg-[#003366] px-4 py-3 text-center text-sm font-semibold text-white dark:bg-[#4a90c8]"
+            >
+              Entrar sin email
+            </Link>
+          </div>
+        )}
+
+        {status !== "sent" && status !== "ratelimit" && (
           <form onSubmit={handleSubmit} className="space-y-3">
             <input
               type="email"
@@ -66,13 +100,19 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={status === "sending"}
-              className="w-full rounded-md bg-neutral-900 px-3 py-2.5 font-medium text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+              className="w-full rounded-xl bg-[#003366] px-3 py-3 text-[15px] font-semibold text-white disabled:opacity-50 dark:bg-[#4a90c8]"
             >
-              {status === "sending" ? "Enviando..." : "Enviar link de acceso"}
+              {status === "sending" ? "Enviando..." : "Enviar link"}
             </button>
             {status === "error" && (
               <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
             )}
+            <Link
+              href="/signup"
+              className="mt-4 block text-center text-sm font-medium text-neutral-500 dark:text-neutral-400"
+            >
+              O entrar sin email
+            </Link>
           </form>
         )}
       </div>
