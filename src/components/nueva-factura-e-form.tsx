@@ -105,8 +105,11 @@ export function NuevaFacturaEForm() {
     setErrorMessage("");
     setFieldErrors({});
 
+    const capitalize = (s: string) =>
+      s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
     const payload = {
-      clienteNombre,
+      clienteNombre: capitalize(clienteNombre.trim()),
       clientePais: pais.codigoPais,
       clienteCuitPais: pais.cuitPais,
       clienteDomicilio: clienteDomicilio || undefined,
@@ -116,7 +119,7 @@ export function NuevaFacturaEForm() {
       tipoExpo,
       idiomaCbte,
       items: items.map((it) => ({
-        descripcion: it.descripcion,
+        descripcion: capitalize(it.descripcion.trim()),
         cantidad: it.cantidad,
         precioUnitario: it.precioUnitario,
       })),
