@@ -72,9 +72,8 @@ export default function LoginPage() {
             <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
               <p className="mb-2 font-medium">Se llegó al límite de mails por ahora.</p>
               <p>
-                Supabase (nuestro proveedor de auth) permite 3 mails por hora en el plan
-                gratis. Reintentá en un rato — o entrá sin email creando una cuenta
-                anónima que después podés vincular.
+                Reintentá en un rato — o entrá sin email creando una cuenta que después
+                podés vincular.
               </p>
             </div>
             <Link

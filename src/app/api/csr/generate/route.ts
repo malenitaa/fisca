@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateCsr } from "@/lib/csr";
 import { encryptSecret } from "@/lib/crypto";
+import { badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Genera par de claves + CSR para que la usuaria firme en ARCA. La clave
@@ -13,27 +15,28 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
+
+  const rl = await rateLimit(supabase, user.id, "csr:generate", {
+    limit: 5,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany("Ya generaste varios pedidos. Esperá un momento.", rl.retryAfter);
 
   const body = await request.json().catch(() => null);
   const cuit = typeof body?.cuit === "string" ? body.cuit.replace(/\D/g, "") : "";
   const razonSocial = typeof body?.razonSocial === "string" ? body.razonSocial.trim() : "";
 
-  if (cuit.length !== 11) {
-    return NextResponse.json({ error: "El CUIT debe tener 11 dígitos." }, { status: 400 });
-  }
+  if (cuit.length !== 11) return badRequest("El CUIT debe tener 11 dígitos.");
+  if (razonSocial.length > 200) return badRequest("La razón social es demasiado larga.");
 
   let generated;
   try {
     generated = generateCsr({ cuit, razonSocial: razonSocial || null });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "No se pudo generar el CSR." },
-      { status: 500 }
-    );
+    return internalError(err, "No se pudo generar el CSR.");
   }
 
-  // Solo un draft activo por user — si vuelve al wizard, arrancamos limpio.
   await supabase.from("csr_drafts").delete().eq("user_id", user.id);
 
   const { data: draft, error } = await supabase
@@ -47,12 +50,7 @@ export async function POST(request: Request) {
     .select("id")
     .single();
 
-  if (error || !draft) {
-    return NextResponse.json(
-      { error: error?.message ?? "No se pudo guardar el borrador." },
-      { status: 500 }
-    );
-  }
+  if (error || !draft) return internalError(error, "No se pudo guardar el borrador.");
 
   return NextResponse.json({ draftId: draft.id, csrPem: generated.csrPem });
 }

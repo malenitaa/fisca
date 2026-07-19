@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { internalError, unauthorized } from "@/lib/api-errors";
 
 export async function GET() {
   const supabase = await createClient();
@@ -7,9 +8,7 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const { data, error } = await supabase
     .from("clientes")
@@ -18,9 +17,7 @@ export async function GET() {
     .order("last_used_at", { ascending: false })
     .limit(50);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return internalError(error);
 
   return NextResponse.json({ clientes: data ?? [] });
 }
