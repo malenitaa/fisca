@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAfipStatus } from "@/lib/afip/status";
+import { FeedbackRow } from "@/components/feedback-row";
 
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
@@ -127,10 +128,6 @@ const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   },
 ];
 
-const FEEDBACK_MAILTO = `mailto:malvertva99@gmail.com?subject=${encodeURIComponent(
-  "Queja o sugerencia - Fisca"
-)}`;
-
 export default async function AyudaPage() {
   const arcaStatus = await getAfipStatus();
 
@@ -178,15 +175,7 @@ export default async function AyudaPage() {
       </div>
 
       <div className="divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white px-4 dark:divide-neutral-900 dark:border-neutral-800 dark:bg-neutral-950">
-        <a
-          href={FEEDBACK_MAILTO}
-          className="flex items-center justify-between gap-3 py-3.5 text-sm text-neutral-900 dark:text-neutral-100"
-        >
-          <span>¿Queja o sugerencia? Envianos un correo</span>
-          <span aria-hidden className="shrink-0 text-neutral-400">
-            ›
-          </span>
-        </a>
+        <FeedbackRow />
         <div className="flex items-center justify-between gap-3 py-3.5">
           <span className="text-sm text-neutral-900 dark:text-neutral-100">
             Estado de los servicios de ARCA

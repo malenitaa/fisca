@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { isCurrentlyUnlocked, isUnlockEnabled } from "@/lib/unlock";
 
 /**
- * Gate cliente-side sobre el layout autenticado. Si el user activó el
- * unlock y ya se venció la ventana de 15min, redirige a /desbloquear
- * pasando el pathname actual como `next` para volver acá cuando termine.
+ * Gate cliente-side sobre el layout autenticado. Redirige a /desbloquear
+ * cuando el user activó el unlock y el estado in-memory dice "no unlocked"
+ * (recién abrió la app, o el WebView volvió del background).
  */
 export function UnlockGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -15,15 +15,26 @@ export function UnlockGate({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (!isUnlockEnabled()) {
-      setChecked(true);
-      return;
+    function check() {
+      if (!isUnlockEnabled()) {
+        setChecked(true);
+        return;
+      }
+      if (isCurrentlyUnlocked()) {
+        setChecked(true);
+        return;
+      }
+      setChecked(false);
+      router.replace(`/desbloquear?next=${encodeURIComponent(pathname)}`);
     }
-    if (isCurrentlyUnlocked()) {
-      setChecked(true);
-      return;
+    check();
+
+    // Al volver del background el estado in-memory ya se limpió; re-chequeamos.
+    function onVisibility() {
+      if (document.visibilityState === "visible") check();
     }
-    router.replace(`/desbloquear?next=${encodeURIComponent(pathname)}`);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [pathname, router]);
 
   if (!checked) return null;
