@@ -108,10 +108,16 @@ export default async function RootPage() {
 
       <div className="px-6 pb-8">
         <Link
-          href="/login"
+          href="/signup"
           className="block rounded-2xl bg-white px-6 py-4 text-center text-[16px] font-semibold text-[#003366] active:bg-white/90"
         >
-          Vincular con ARCA
+          Comenzar
+        </Link>
+        <Link
+          href="/login"
+          className="mt-3 block text-center text-sm font-medium text-white/90 active:text-white/60"
+        >
+          Ya tengo cuenta
         </Link>
         <p className="mt-4 text-center text-xs text-[#7bb0e0]">
           Usás tu CUIT y clave fiscal. No guardamos tu clave.

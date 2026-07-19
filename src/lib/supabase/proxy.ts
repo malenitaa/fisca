@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS_STARTSWITH = [
   "/login",
+  "/signup",
   "/auth/callback",
   // Rutas del PWA que Safari/Chrome piden sin sesión para reconocer
   // la app como instalable ("Agregar a inicio"). Si redirigen a /login,

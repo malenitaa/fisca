@@ -88,6 +88,30 @@ export function NuevaFacturaEForm() {
 
   const totalArs = total * (Number(monedaCotizacion) || 0);
 
+  const puedeEmitir = useMemo(() => {
+    if (!clienteNombre.trim()) return false;
+    if (!clienteDomicilio.trim()) return false;
+    if (!(Number(monedaCotizacion) > 0)) return false;
+    if ((tipoExpo === 2 || tipoExpo === 4) && !fechaPago) return false;
+    const hayItemValido = items.some(
+      (it) =>
+        it.descripcion.trim().length > 0 &&
+        Number(it.precioUnitario) > 0 &&
+        Number(it.cantidad) > 0
+    );
+    return hayItemValido;
+  }, [clienteNombre, clienteDomicilio, monedaCotizacion, tipoExpo, fechaPago, items]);
+
+  function scrollToField(path: string) {
+    const el = document.querySelector<HTMLElement>(`[data-field="${path}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const input = el.querySelector<HTMLInputElement | HTMLSelectElement>(
+      "input, select, textarea"
+    );
+    setTimeout(() => input?.focus(), 300);
+  }
+
   function updateItem(index: number, patch: Partial<ItemRow>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   }
@@ -134,6 +158,8 @@ export function NuevaFacturaEForm() {
       setFieldErrors(errs);
       setStatus("error");
       setErrorMessage("Revisá los campos marcados antes de continuar.");
+      const firstErrorPath = parsed.error.issues[0]?.path.join(".");
+      if (firstErrorPath) scrollToField(firstErrorPath);
       return;
     }
 
@@ -189,7 +215,7 @@ export function NuevaFacturaEForm() {
           Cliente del exterior
         </h3>
         <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
-          <div className="px-4 py-3 text-sm">
+          <div data-field="clienteNombre" className="px-4 py-3 text-sm">
             <input
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
@@ -222,7 +248,7 @@ export function NuevaFacturaEForm() {
               </select>
             </div>
           </label>
-          <div className="px-4 py-3 text-sm">
+          <div data-field="clienteDomicilio" className="px-4 py-3 text-sm">
             <input
               value={clienteDomicilio}
               onChange={(e) => setClienteDomicilio(e.target.value)}
@@ -274,7 +300,7 @@ export function NuevaFacturaEForm() {
               </select>
             </div>
           </label>
-          <div className="px-4 py-3 text-sm">
+          <div data-field="monedaCotizacion" className="px-4 py-3 text-sm">
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs text-neutral-500 dark:text-neutral-400">
                 Cotización oficial de AFIP
@@ -305,7 +331,7 @@ export function NuevaFacturaEForm() {
             )}
           </div>
           {(tipoExpo === 2 || tipoExpo === 4) && (
-            <div className="px-4 py-3 text-sm">
+            <div data-field="fechaPago" className="px-4 py-3 text-sm">
               <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
                 Fecha de pago
               </span>
@@ -469,7 +495,11 @@ export function NuevaFacturaEForm() {
           <button
             type="submit"
             disabled={status === "submitting"}
-            className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+            className={`w-full rounded-xl px-3 py-3.5 text-[15px] font-semibold text-white ${
+              puedeEmitir
+                ? "bg-[#003366] hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+                : "bg-neutral-300 dark:bg-neutral-700"
+            } disabled:opacity-50`}
           >
             {status === "submitting" ? "Emitiendo..." : "Emitir factura E"}
           </button>
