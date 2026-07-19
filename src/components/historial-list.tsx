@@ -122,29 +122,68 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
 
   return (
     <div>
-      {/* Card resumen del mes en curso — separado por moneda para no mezclar
-       * pesos con dólares. Si sólo hay una moneda, se muestra sólo esa. */}
-      <div className="mb-4 rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs opacity-80">Facturado este mes</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">
-              $
-              {summary.totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-            </p>
-            {summary.totalUsd > 0 && (
-              <p className="mt-1 text-sm opacity-90 tabular-nums">
-                + US$
-                {summary.totalUsd.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-              </p>
-            )}
+      {/* Card resumen: la moneda con mayor volumen se muestra como principal
+       * (destacado grande). La otra, si existe, va abajo con tamaño chico.
+       * Comparamos por valor absoluto; el peso argentino es típicamente
+       * mucho más "grande" numéricamente que USD, así que también miramos
+       * el equivalente en pesos aproximado — pero para no depender de una
+       * cotización, comparamos por cantidad de facturas y usamos como
+       * criterio cuál tiene mayor total en su propia moneda. */}
+      {(() => {
+        const arsCount = summary.totalArs > 0 ? 1 : 0;
+        const usdCount = summary.totalUsd > 0 ? 1 : 0;
+        // Si solo hay USD, USD es principal. Si solo ARS, ARS principal.
+        // Si hay ambas, mostramos como principal la que tenga MAYOR
+        // magnitud comparada en su propia unidad (más facturas emitidas
+        // en esa moneda).
+        const arsInvoices = invoices.filter(
+          (i) =>
+            i.fecha_emision.startsWith(currentMonth) &&
+            !idsAnulados.has(i.id) &&
+            (!i.moneda || i.moneda === "PES")
+        ).length;
+        const usdInvoices = invoices.filter(
+          (i) =>
+            i.fecha_emision.startsWith(currentMonth) &&
+            !idsAnulados.has(i.id) &&
+            i.moneda === "DOL"
+        ).length;
+        const usdEsPrincipal =
+          usdCount > 0 && (arsCount === 0 || usdInvoices >= arsInvoices);
+        const principal = usdEsPrincipal
+          ? { symbol: "US$", total: summary.totalUsd }
+          : { symbol: "$", total: summary.totalArs };
+        const secundario = usdEsPrincipal
+          ? summary.totalArs > 0
+            ? { symbol: "$", total: summary.totalArs }
+            : null
+          : summary.totalUsd > 0
+          ? { symbol: "US$", total: summary.totalUsd }
+          : null;
+        return (
+          <div className="mb-4 rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs opacity-80">Facturado este mes</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">
+                  {principal.symbol}
+                  {principal.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                </p>
+                {secundario && (
+                  <p className="mt-1 text-sm opacity-90 tabular-nums">
+                    + {secundario.symbol}
+                    {secundario.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-xs opacity-80">Comprobantes</p>
+                <p className="mt-1 text-2xl font-semibold">{summary.count}</p>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs opacity-80">Comprobantes</p>
-            <p className="mt-1 text-2xl font-semibold">{summary.count}</p>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
         <select

@@ -25,7 +25,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   /* La app corre en PWA/WebView; no permitimos scroll horizontal ni
-   * touch pan lateral — sólo scroll vertical (arriba/abajo). */
+   * touch pan lateral — sólo scroll vertical (arriba/abajo). También
+   * bloqueamos el bounce/rubber-band de iOS que hacía ver que el tab
+   * bar "se movía" al scrollear hasta el fondo. */
   overflow-x: hidden;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
 }
