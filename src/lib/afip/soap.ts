@@ -29,6 +29,7 @@ export async function callWsfeSoap(params: {
         SOAPAction: params.soapAction,
       },
       body: envelope,
+      signal: AbortSignal.timeout(20_000),
     });
   } catch (err) {
     throw new AfipError(

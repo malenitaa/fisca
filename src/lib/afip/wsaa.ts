@@ -106,6 +106,7 @@ export async function requestTicketAcceso(params: {
         SOAPAction: "",
       },
       body: soapEnvelope,
+      signal: AbortSignal.timeout(20_000),
     });
   } catch (err) {
     throw new AfipError(

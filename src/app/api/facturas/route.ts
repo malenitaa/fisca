@@ -117,9 +117,10 @@ export async function POST(request: Request) {
     if (insertError || !inserted) {
       // El CAE ya fue otorgado por AFIP; lo devolvemos igual aunque falle el guardado local,
       // para no hacerle perder al usuario un comprobante que ya es legalmente válido.
+      console.error("[api/facturas] Error guardando factura en historial", insertError);
       return NextResponse.json(
         {
-          error: `La factura fue autorizada por AFIP (CAE ${cae.cae}) pero no se pudo guardar en el historial: ${insertError?.message}. Anotá el CAE.`,
+          error: `La factura fue autorizada por AFIP (CAE ${cae.cae}) pero no se pudo guardar en el historial. Anotá el CAE.`,
         },
         { status: 500 }
       );
@@ -136,8 +137,9 @@ export async function POST(request: Request) {
     if (err instanceof AfipError) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }
+    console.error("[api/facturas]", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error inesperado al emitir la factura." },
+      { error: "Error inesperado al emitir la factura. Intentá de nuevo." },
       { status: 500 }
     );
   }

@@ -21,7 +21,8 @@ export async function POST(request: Request) {
     .upsert({ user_id: user.id, periodo });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[api/monotributo/pagos]", error);
+    return NextResponse.json({ error: "No se pudo registrar el pago." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

@@ -130,9 +130,10 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       .single();
 
     if (insertError || !inserted) {
+      console.error("[api/facturas/nota-credito] Error guardando nota de crédito", insertError);
       return NextResponse.json(
         {
-          error: `ARCA autorizó la Nota de Crédito (CAE ${cae.cae}) pero no se pudo guardar en el historial: ${insertError?.message}. Anotá el CAE.`,
+          error: `ARCA autorizó la Nota de Crédito (CAE ${cae.cae}) pero no se pudo guardar en el historial. Anotá el CAE.`,
         },
         { status: 500 }
       );
@@ -149,8 +150,9 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     if (err instanceof AfipError) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }
+    console.error("[api/facturas/nota-credito]", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error inesperado al anular la factura." },
+      { error: "Error inesperado al anular la factura. Intentá de nuevo." },
       { status: 500 }
     );
   }

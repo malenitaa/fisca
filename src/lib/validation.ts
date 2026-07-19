@@ -10,8 +10,8 @@ export const configuracionSchema = z.object({
   razonSocial: z.string().trim().max(200).optional(),
   puntoVenta: z.coerce.number().int().min(1).max(9999),
   ambiente: z.enum(["homologacion", "produccion"]),
-  cert: z.string().min(1, "Falta el certificado (.crt)."),
-  key: z.string().min(1, "Falta la clave privada (.key)."),
+  cert: z.string().min(1, "Falta el certificado (.crt).").max(16384, "El certificado es demasiado grande."),
+  key: z.string().min(1, "Falta la clave privada (.key).").max(16384, "La clave privada es demasiado grande."),
 });
 
 export type ConfiguracionInput = z.infer<typeof configuracionSchema>;
@@ -30,9 +30,9 @@ export const nuevaFacturaSchema = z
     clienteNombre: z.string().trim().max(200).optional(),
     condicionIvaReceptorId: z.coerce.number().int(),
     items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
-    fechaServicioDesde: z.string().optional(),
-    fechaServicioHasta: z.string().optional(),
-    fechaVtoPago: z.string().optional(),
+    fechaServicioDesde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD).").optional(),
+    fechaServicioHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD).").optional(),
+    fechaVtoPago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD).").optional(),
   })
   .superRefine((data, ctx) => {
     if (data.docTipo === 99) {

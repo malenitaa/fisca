@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[api/configuracion]", error);
+    return NextResponse.json({ error: "No se pudo guardar la configuración." }, { status: 500 });
   }
 
   // Si cambió cert/ambiente, el TA cacheado (si había uno) queda inválido.
