@@ -104,8 +104,40 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
     [filtered]
   );
 
+  // Resumen del período actual (mes en curso) — sólo Factura C/E en pesos
+  // para el card destacado. Facturas E en USD no se suman por diferencia
+  // de moneda.
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const summary = useMemo(() => {
+    const filas = invoices.filter(
+      (i) =>
+        i.fecha_emision.startsWith(currentMonth) &&
+        !idsAnulados.has(i.id) &&
+        (!i.moneda || i.moneda === "PES")
+    );
+    const totalArs = filas.reduce((s, i) => s + Number(i.importe_total), 0);
+    return { total: totalArs, count: filas.length };
+  }, [invoices, idsAnulados, currentMonth]);
+
   return (
     <div>
+      {/* Card resumen del mes en curso — matcheando el mockup */}
+      <div className="mb-4 rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs opacity-80">Facturado este mes</p>
+            <p className="mt-1 text-2xl font-semibold">
+              $
+              {summary.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs opacity-80">Comprobantes</p>
+            <p className="mt-1 text-2xl font-semibold">{summary.count}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
         <select
           value={periodo}

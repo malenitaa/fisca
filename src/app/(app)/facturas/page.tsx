@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FacturaTabs } from "@/components/factura-tabs";
 import { MonotributoReminder } from "@/components/monotributo-reminder";
 import { periodoActual, periodoLabel } from "@/lib/monotributo";
+import { LogoIcon } from "@/components/logo";
 
 export default async function NuevaFacturaPage() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export default async function NuevaFacturaPage() {
 
   const { data: config } = await supabase
     .from("afip_config")
-    .select("ambiente")
+    .select("ambiente, punto_venta")
     .eq("user_id", user!.id)
     .maybeSingle();
 
@@ -28,23 +29,29 @@ export default async function NuevaFacturaPage() {
     .eq("periodo", periodo)
     .maybeSingle();
 
+  const pvLabel = `P.V. ${String(config.punto_venta).padStart(5, "0")}`;
+
   return (
     <div>
+      <header className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LogoIcon className="h-7 w-7" />
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Nueva factura
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">{pvLabel}</span>
+          {config.ambiente !== "produccion" && (
+            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+              Homolog.
+            </span>
+          )}
+        </div>
+      </header>
+
       {!pago && <MonotributoReminder periodo={periodo} periodoLabel={periodoLabel(periodo)} />}
-      <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Nueva factura
-        </h1>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            config.ambiente === "produccion"
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-              : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-          }`}
-        >
-          {config.ambiente === "produccion" ? "Producción" : "Homologación"}
-        </span>
-      </div>
+
       <FacturaTabs />
     </div>
   );
