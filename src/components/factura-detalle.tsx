@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { AnularFacturaButton } from "@/components/anular-factura-button";
 
+interface CapacitorBrowserPlugin {
+  open(options: { url: string }): Promise<void>;
+}
+
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean;
+  Plugins?: { Browser?: CapacitorBrowserPlugin };
+}
+
 interface Props {
   titulo: string;
   numero: string;
@@ -27,6 +36,23 @@ export function FacturaDetalle({
   puedeAnular,
 }: Props) {
   const [sharing, setSharing] = useState(false);
+
+  /** Dentro del WKWebView de Capacitor el atributo `download` de un <a> no
+   * hace nada — WKWebView no tiene gestor de descargas, así que navega
+   * toda la app al PDF crudo y no queda forma de volver. Lo abrimos con
+   * el plugin Browser (SFSafariViewController con su propio botón de
+   * volver) en vez de navegar el webview principal. En browser normal
+   * (no Capacitor), dejamos que el <a href download> haga lo suyo. */
+  async function descargar(e: React.MouseEvent<HTMLAnchorElement>) {
+    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+    if (!cap?.isNativePlatform?.()) return;
+
+    e.preventDefault();
+    const browser = cap.Plugins?.Browser;
+    if (browser) {
+      await browser.open({ url: `${window.location.origin}/api/facturas/${facturaId}/pdf` });
+    }
+  }
 
   async function compartir() {
     setSharing(true);
@@ -114,6 +140,7 @@ export function FacturaDetalle({
         <a
           href={`/api/facturas/${facturaId}/pdf`}
           download
+          onClick={descargar}
           className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
         >
           Descargar PDF
