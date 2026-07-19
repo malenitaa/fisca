@@ -29,21 +29,43 @@ export function FacturaDetalle({
   const [sharing, setSharing] = useState(false);
 
   async function compartir() {
-    const pdfUrl = `${window.location.origin}/api/facturas/${facturaId}/pdf`;
-    const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}\nPDF: ${pdfUrl}`;
+    setSharing(true);
+    const pdfUrl = `/api/facturas/${facturaId}/pdf`;
+    const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}`;
 
-    if (typeof navigator !== "undefined" && navigator.share) {
-      setSharing(true);
-      try {
-        await navigator.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
-      } catch {
-        // el user canceló, no-op
-      } finally {
-        setSharing(false);
+    try {
+      // Bajamos el PDF como blob y lo pasamos como File a la Web Share API.
+      // Así WhatsApp recibe el archivo adjunto directamente (no un link a
+      // fisca.vercel.app).
+      const res = await fetch(pdfUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `factura-${numero}.pdf`, {
+        type: "application/pdf",
+      });
+
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+
+      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: `${titulo} ${numero}`,
+          text: texto,
+        });
+      } else if (nav.share) {
+        // Fallback: no soporta archivos → compartimos el link (browsers
+        // sin soporte de files pero con Web Share).
+        await nav.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
+      } else {
+        // Sin Web Share: abrimos wa.me con el texto (sin archivo).
+        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
       }
-      return;
+    } catch {
+      // Cancelado o error — no-op.
+    } finally {
+      setSharing(false);
     }
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   }
 
   return (
