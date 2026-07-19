@@ -40,7 +40,7 @@ export default async function RootPage() {
 
   return (
     <main
-      className="flex h-dvh flex-col overflow-hidden bg-[#003366] text-white"
+      className="fixed inset-0 flex flex-col overflow-hidden bg-[#003366] text-white"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "env(safe-area-inset-bottom)",

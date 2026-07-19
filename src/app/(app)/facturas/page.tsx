@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FacturaTabs } from "@/components/factura-tabs";
 import { MonotributoReminder } from "@/components/monotributo-reminder";
@@ -17,8 +17,28 @@ export default async function NuevaFacturaPage() {
     .eq("user_id", user!.id)
     .maybeSingle();
 
+  // Sin configuración de ARCA todavía → mostramos un estado vacío en la
+  // pantalla de Facturar con CTA al Perfil, en vez de redirigir (que era
+  // confuso porque el usuario tocaba "Facturar" y aterrizaba en "Perfil").
   if (!config) {
-    redirect("/configuracion");
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <LogoIcon className="mb-4 h-14 w-14" />
+        <h1 className="mb-2 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          Falta configurar tu cuenta
+        </h1>
+        <p className="mb-6 max-w-xs text-sm text-neutral-500 dark:text-neutral-400">
+          Para emitir facturas necesitás cargar tu CUIT, punto de venta y
+          certificado de ARCA una sola vez.
+        </p>
+        <Link
+          href="/configuracion"
+          className="rounded-xl bg-[#003366] px-6 py-3 text-sm font-semibold text-white dark:bg-[#4a90c8]"
+        >
+          Ir a Perfil
+        </Link>
+      </div>
+    );
   }
 
   const periodo = periodoActual();
