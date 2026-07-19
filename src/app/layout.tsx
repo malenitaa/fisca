@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s · Fisca",
   },
   description:
-    "Emití Facturas C y E con CAE real de ARCA desde el celular en 30 segundos. Para monotributistas argentinos, incluyendo exportación de servicios (Deel, Upwork).",
+    "Emití Facturas C y E con CAE real de ARCA desde el celular, sin dashboards ni terceros que toquen tu clave fiscal. Para monotributistas argentinos, incluyendo exportación de servicios.",
   appleWebApp: {
     title: "Fisca",
     capable: true,

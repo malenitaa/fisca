@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "Fisca — Facturación electrónica ARCA para monotributistas | Factura C y E desde el celular",
   description:
-    "Emití Facturas C (mercado interno) y Facturas E (exportación de servicios como Deel, Upwork) con CAE real de ARCA en 30 segundos desde tu teléfono. Sin dashboards, sin terceros que toquen tu clave fiscal.",
+    "Emití Facturas C (mercado interno) y Facturas E (exportación de servicios como Deel, Upwork) con CAE real de ARCA desde tu teléfono. Sin dashboards, sin terceros que toquen tu clave fiscal.",
   keywords: [
     "facturación electrónica monotributista",
     "factura C ARCA",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Fisca — Facturación electrónica ARCA para monotributistas",
     description:
-      "Factura C y Factura E con CAE, desde el celular, en 30 segundos. Sin gestión contable, sin dashboards.",
+      "Factura C y Factura E con CAE, desde el celular. Sin gestión contable, sin dashboards.",
     url: "https://fisca.vercel.app",
     siteName: "Fisca",
     locale: "es_AR",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Fisca — Facturación ARCA en 30 segundos",
+    title: "Fisca — Facturación ARCA sin fricción",
     description: "Factura C y E, CAE real, desde el celular. Sin dashboards.",
   },
   alternates: {
@@ -72,7 +72,7 @@ export default async function RootPage() {
 
           {/* BAB: Before */}
           <p className="mb-4 text-lg leading-relaxed text-neutral-700 dark:text-neutral-300">
-            <strong>Sos monotributista</strong> y facturar te lleva 20 minutos: la web de
+            <strong>Sos monotributista</strong> y facturar te lleva demasiado: la web de
             ARCA se cuelga, los sistemas contables te obligan a pagar por dashboards que
             no vas a usar, y las apps &quot;fáciles&quot; mandan tu certificado a un
             servidor tercero para que firmen la autenticación por vos.
@@ -80,10 +80,10 @@ export default async function RootPage() {
 
           {/* BAB: After */}
           <p className="mb-4 text-lg leading-relaxed text-neutral-700 dark:text-neutral-300">
-            <strong>Con Fisca son 30 segundos</strong>: abrís la app en el teléfono,
-            tocás un cliente reciente, cargás los ítems, y ya tenés el PDF con CAE listo
-            para mandar por WhatsApp. Emitís Factura C para clientes de Argentina o
-            Factura E si trabajás por Deel, Upwork o cualquier plataforma extranjera.
+            <strong>Con Fisca abrís, tocás y facturás</strong>: elegís un cliente
+            reciente, cargás los ítems, y ya tenés el PDF con CAE listo para mandar por
+            WhatsApp. Emitís Factura C para clientes de Argentina o Factura E si
+            trabajás por Deel, Upwork o cualquier plataforma extranjera.
           </p>
 
           {/* BAB: Bridge */}
