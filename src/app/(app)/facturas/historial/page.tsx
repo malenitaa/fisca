@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { HistorialList } from "@/components/historial-list";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 
 export default async function HistorialPage() {
   const supabase = await createClient();
@@ -33,7 +34,7 @@ export default async function HistorialPage() {
   const mesActual = `${meses[now.getMonth()]} ${now.getFullYear()}`;
 
   return (
-    <div>
+    <PullToRefresh>
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-[19px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
           Historial
@@ -50,6 +51,6 @@ export default async function HistorialPage() {
       ) : (
         <HistorialList invoices={invoices} />
       )}
-    </div>
+    </PullToRefresh>
   );
 }
