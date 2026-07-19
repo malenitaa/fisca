@@ -176,6 +176,53 @@ export function NuevaFacturaForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {clientes.length > 0 && (
+        <section>
+          <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Facturar a
+          </label>
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {clientes.slice(0, 12).map((c) => {
+              const isSelected =
+                docTipo === c.doc_tipo && docNro === c.doc_numero && docTipo !== 99;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => pickCliente(c)}
+                  className={`flex shrink-0 flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left text-xs transition ${
+                    isSelected
+                      ? "border-[#003366] bg-[#003366]/10 dark:border-[#7bb0e0] dark:bg-[#7bb0e0]/15"
+                      : "border-neutral-200 bg-white hover:border-[#003366]/40 hover:bg-[#003366]/5 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-[#7bb0e0]/40"
+                  }`}
+                >
+                  <span className="max-w-[10rem] truncate font-medium text-neutral-900 dark:text-neutral-100">
+                    {c.nombre || `${c.doc_tipo === 80 ? "CUIT" : "DNI"} ${c.doc_numero}`}
+                  </span>
+                  {c.nombre && (
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      {c.doc_tipo === 80 ? "CUIT" : "DNI"} {c.doc_numero}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                setDocTipo(99);
+                setDocNro("");
+                setClienteNombre("");
+                setCondicionIva(5);
+              }}
+              className="flex shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-transparent px-3 py-2 text-xs text-neutral-600 hover:border-neutral-400 dark:border-neutral-700 dark:text-neutral-400"
+            >
+              Nuevo
+            </button>
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Concepto</label>
@@ -249,33 +296,6 @@ export function NuevaFacturaForm() {
               {fieldErrors["fechaServicioDesde"]}
             </p>
           )}
-        </div>
-      )}
-
-      {clientes.length > 0 && (
-        <div>
-          <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Clientes recientes
-          </label>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {clientes.slice(0, 12).map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => pickCliente(c)}
-                className="flex shrink-0 flex-col items-start gap-0.5 rounded-lg border border-[#003366]/20 bg-[#003366]/5 px-3 py-2 text-left text-xs hover:border-[#003366]/40 hover:bg-[#003366]/10 dark:border-[#4a90c8]/30 dark:bg-[#4a90c8]/10 dark:hover:bg-[#4a90c8]/20"
-              >
-                <span className="max-w-[10rem] truncate font-medium text-neutral-900 dark:text-neutral-100">
-                  {c.nombre || (c.doc_tipo === 80 ? "CUIT" : "DNI") + " " + c.doc_numero}
-                </span>
-                {c.nombre && (
-                  <span className="text-neutral-500 dark:text-neutral-400">
-                    {c.doc_tipo === 80 ? "CUIT" : "DNI"} {c.doc_numero}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 

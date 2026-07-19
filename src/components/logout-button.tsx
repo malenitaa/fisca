@@ -16,9 +16,9 @@ export function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+      className="w-full text-left text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
     >
-      Salir
+      Cerrar sesión
     </button>
   );
 }
