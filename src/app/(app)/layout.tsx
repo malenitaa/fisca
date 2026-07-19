@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/logout-button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -33,8 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               href="/configuracion"
               className="whitespace-nowrap text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
             >
-              <span className="sm:hidden">Config</span>
-              <span className="hidden sm:inline">Configuración</span>
+              Perfil
             </Link>
             <Link
               href="/ayuda"
@@ -44,7 +42,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
           </nav>
           <div className="order-1 flex items-center gap-4 sm:order-2">
-            <ThemeToggle />
             <LogoutButton />
           </div>
         </div>

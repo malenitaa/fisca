@@ -1,9 +1,17 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CONCEPTOS, CONDICION_IVA_RECEPTOR, DOC_TIPOS } from "@/lib/afip/types";
 import { nuevaFacturaSchema } from "@/lib/validation";
+
+interface Cliente {
+  id: string;
+  nombre: string;
+  doc_tipo: number;
+  doc_numero: string;
+  condicion_iva_id: number;
+}
 
 interface ItemRow {
   descripcion: string;
@@ -37,6 +45,21 @@ export function NuevaFacturaForm() {
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [result, setResult] = useState<EmitResult | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  useEffect(() => {
+    fetch("/api/clientes")
+      .then((r) => (r.ok ? r.json() : { clientes: [] }))
+      .then((body) => setClientes(body.clientes ?? []))
+      .catch(() => setClientes([]));
+  }, []);
+
+  function pickCliente(c: Cliente) {
+    setDocTipo(c.doc_tipo);
+    setDocNro(c.doc_numero);
+    setClienteNombre(c.nombre);
+    setCondicionIva(c.condicion_iva_id);
+  }
 
   const total = useMemo(
     () =>
@@ -226,6 +249,33 @@ export function NuevaFacturaForm() {
               {fieldErrors["fechaServicioDesde"]}
             </p>
           )}
+        </div>
+      )}
+
+      {clientes.length > 0 && (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Clientes recientes
+          </label>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {clientes.slice(0, 12).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => pickCliente(c)}
+                className="flex shrink-0 flex-col items-start gap-0.5 rounded-lg border border-[#003366]/20 bg-[#003366]/5 px-3 py-2 text-left text-xs hover:border-[#003366]/40 hover:bg-[#003366]/10 dark:border-[#4a90c8]/30 dark:bg-[#4a90c8]/10 dark:hover:bg-[#4a90c8]/20"
+              >
+                <span className="max-w-[10rem] truncate font-medium text-neutral-900 dark:text-neutral-100">
+                  {c.nombre || (c.doc_tipo === 80 ? "CUIT" : "DNI") + " " + c.doc_numero}
+                </span>
+                {c.nombre && (
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    {c.doc_tipo === 80 ? "CUIT" : "DNI"} {c.doc_numero}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
