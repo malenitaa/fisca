@@ -26,31 +26,29 @@ export function FacturaEmitidaSuccess({
 }: SuccessProps) {
   const router = useRouter();
   const [sharing, setSharing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  async function fetchPdfBlob(): Promise<Blob> {
+    const res = await fetch(`/api/facturas/${facturaId}/pdf`);
+    if (!res.ok) throw new Error("No se pudo obtener el PDF.");
+    return res.blob();
+  }
 
   async function compartir() {
     setSharing(true);
-    const pdfUrl = `/api/facturas/${facturaId}/pdf`;
     const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}`;
-
     try {
-      const res = await fetch(pdfUrl);
-      const blob = await res.blob();
+      const blob = await fetchPdfBlob();
       const file = new File([blob], `factura-${numero}.pdf`, {
         type: "application/pdf",
       });
-
       const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
       };
-
-      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
-        await nav.share({
-          files: [file],
-          title: `${titulo} ${numero}`,
-          text: texto,
-        });
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: `${titulo} ${numero}`, text: texto });
       } else if (nav.share) {
-        await nav.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
+        await nav.share({ title: `${titulo} ${numero}`, text: texto });
       } else {
         window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
       }
@@ -58,6 +56,39 @@ export function FacturaEmitidaSuccess({
       // Cancelado o error — no-op.
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function descargar(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    setDownloading(true);
+    try {
+      const blob = await fetchPdfBlob();
+      const filename = `factura-${numero}.pdf`;
+      const file = new File([blob], filename, { type: "application/pdf" });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+      const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
+        .Capacitor;
+      const isNative = cap?.isNativePlatform?.() ?? false;
+
+      if (isNative && nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: filename });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Cancelado o error — no-op.
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -114,10 +145,10 @@ export function FacturaEmitidaSuccess({
         <div className="grid grid-cols-2 gap-2.5">
           <a
             href={`/api/facturas/${facturaId}/pdf`}
-            download
+            onClick={descargar}
             className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
           >
-            Descargar PDF
+            {downloading ? "Descargando..." : "Descargar PDF"}
           </a>
           <button
             type="button"
