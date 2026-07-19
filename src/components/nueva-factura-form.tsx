@@ -200,7 +200,7 @@ export function NuevaFacturaForm() {
   const clienteEsCF = docTipo === 99;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 pb-32">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* CLIENTE */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -480,15 +480,9 @@ export function NuevaFacturaForm() {
         </p>
       )}
 
-      {/* Fixed arriba del tab bar */}
-      <div
-        className="fixed inset-x-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 3.5rem)",
-          willChange: "transform",
-          transform: "translateZ(0)",
-        }}
-      >
+      {/* Sticky al fondo del scroll container (main). Como main llega hasta
+       * el tab bar (que es shrink-0), el Emitir se pega justo arriba. */}
+      <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
         <div className="mx-auto max-w-2xl px-4 py-3">
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>

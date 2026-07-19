@@ -46,7 +46,7 @@ export default async function RootPage() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="flex flex-1 flex-col justify-end px-8 pb-16">
+      <div className="flex flex-1 flex-col justify-center px-8">
         <h1 className="mb-4 text-5xl font-semibold leading-[1.05] tracking-tight">
           Facturá sin
           <br />
