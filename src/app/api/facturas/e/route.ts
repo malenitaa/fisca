@@ -88,6 +88,7 @@ export async function POST(request: Request) {
         monedaCotizacion: input.monedaCotizacion,
         tipoExpo: input.tipoExpo as 1 | 2 | 4,
         idiomaCbte: input.idiomaCbte as 1 | 2 | 3,
+        fechaPago: input.fechaPago,
         items,
       },
     });
