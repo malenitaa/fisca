@@ -7,16 +7,16 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getRpConfig } from "@/lib/webauthn";
 import { cookies } from "next/headers";
+import { badRequest, notFound, unauthorized } from "@/lib/api-errors";
 
 const CHALLENGE_COOKIE = "fisca_wa_auth_challenge";
 
-/** GET → options de autenticación (challenge + credenciales permitidas). */
 export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { rpID } = getRpConfig();
   const { data: credentials } = await supabase
@@ -45,21 +45,19 @@ export async function GET() {
   return NextResponse.json(options);
 }
 
-/** POST → verifica el assertion y actualiza el counter. */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
 
   const cookieStore = await cookies();
   const expectedChallenge = cookieStore.get(CHALLENGE_COOKIE)?.value;
-  if (!expectedChallenge) {
-    return NextResponse.json({ error: "Challenge no encontrado." }, { status: 400 });
-  }
+  if (!expectedChallenge) return badRequest("Sesión de autenticación expirada.");
 
-  const body: AuthenticationResponseJSON = await request.json();
+  const body = (await request.json().catch(() => null)) as AuthenticationResponseJSON | null;
+  if (!body?.id) return badRequest("Datos inválidos.");
 
   const { data: cred } = await supabase
     .from("user_passkeys")
@@ -68,9 +66,7 @@ export async function POST(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!cred) {
-    return NextResponse.json({ error: "Credencial desconocida." }, { status: 404 });
-  }
+  if (!cred) return notFound("Credencial desconocida.");
 
   const { rpID, origins } = getRpConfig();
 
@@ -90,15 +86,11 @@ export async function POST(request: Request) {
       requireUserVerification: true,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Verificación fallida." },
-      { status: 400 }
-    );
+    console.error("[passkey verify]", err);
+    return badRequest("No se pudo verificar.");
   }
 
-  if (!verification.verified) {
-    return NextResponse.json({ error: "No verificado." }, { status: 400 });
-  }
+  if (!verification.verified) return badRequest("No se pudo verificar.");
 
   await supabase
     .from("user_passkeys")

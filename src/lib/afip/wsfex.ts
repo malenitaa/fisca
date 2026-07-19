@@ -231,6 +231,8 @@ export async function solicitarCaeE(params: {
     )
     .join("\n            ");
 
+  // Todos los campos user-controlled se pasan por xmlEscape aunque el
+  // validador de zod ya restringe los formatos — defensa en profundidad.
   const body = `<ar:FEXAuthorize>
     ${authBlock(auth)}
     <ar:Cmp>
@@ -243,10 +245,10 @@ export async function solicitarCaeE(params: {
       <ar:Permiso_existente>${factura.tipoExpo === 1 ? "N" : ""}</ar:Permiso_existente>
       <ar:Dst_cmp>${factura.clientePais}</ar:Dst_cmp>
       <ar:Cliente>${xmlEscape(factura.clienteNombre)}</ar:Cliente>
-      <ar:Cuit_pais_cliente>${factura.clienteCuitPais}</ar:Cuit_pais_cliente>
+      <ar:Cuit_pais_cliente>${xmlEscape(factura.clienteCuitPais)}</ar:Cuit_pais_cliente>
       <ar:Domicilio_cliente>${xmlEscape(factura.clienteDomicilio ?? "")}</ar:Domicilio_cliente>
       <ar:Id_impositivo>${xmlEscape(factura.clienteIdImpositivo ?? "")}</ar:Id_impositivo>
-      <ar:Moneda_Id>${factura.monedaId}</ar:Moneda_Id>
+      <ar:Moneda_Id>${xmlEscape(factura.monedaId)}</ar:Moneda_Id>
       <ar:Moneda_ctz>${factura.monedaCotizacion.toFixed(6)}</ar:Moneda_ctz>
       <ar:Obs_comerciales></ar:Obs_comerciales>
       <ar:Imp_total>${importeTotal.toFixed(2)}</ar:Imp_total>
@@ -257,7 +259,7 @@ export async function solicitarCaeE(params: {
       </ar:Items>${
         factura.fechaPago
           ? `
-      <ar:Fecha_pago>${factura.fechaPago.replaceAll("-", "")}</ar:Fecha_pago>`
+      <ar:Fecha_pago>${xmlEscape(factura.fechaPago.replaceAll("-", ""))}</ar:Fecha_pago>`
           : ""
       }
     </ar:Cmp>
