@@ -100,8 +100,7 @@ export function FacturaEmitidaSuccess({
         <div className="grid grid-cols-2 gap-2.5">
           <a
             href={`/api/facturas/${facturaId}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
           >
             Descargar PDF

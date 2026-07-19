@@ -177,241 +177,269 @@ export function NuevaFacturaEForm() {
     );
   }
 
+  const tipoExpoLabel = TIPO_EXPO.find((t) => t.value === tipoExpo)?.label ?? "";
+  const idiomaLabel = IDIOMA_CBTE.find((l) => l.value === idiomaCbte)?.label ?? "";
+  const monedaFull = MONEDAS.find((m) => m.value === monedaId) ?? MONEDAS[0];
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* CLIENTE DEL EXTERIOR */}
       <section>
-        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Cliente extranjero
-        </label>
-        <input
-          value={clienteNombre}
-          onChange={(e) => setClienteNombre(e.target.value)}
-          placeholder=""
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-        />
-        {fieldErrors["clienteNombre"] && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors["clienteNombre"]}</p>
-        )}
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+          Cliente del exterior
+        </h3>
+        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="px-4 py-3 text-sm">
+            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
+              Nombre / Razón social
+            </span>
+            <input
+              value={clienteNombre}
+              onChange={(e) => setClienteNombre(e.target.value)}
+              autoCapitalize="words"
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+            />
+            {fieldErrors["clienteNombre"] && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {fieldErrors["clienteNombre"]}
+              </p>
+            )}
+          </div>
+          <label className="flex items-center justify-between px-4 py-3 text-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">País</span>
+            <div className="relative flex items-center">
+              <span className="pr-1 text-neutral-900 dark:text-neutral-100">{pais.label}</span>
+              <span className="text-neutral-400">›</span>
+              <select
+                value={paisIdx}
+                onChange={(e) => setPaisIdx(Number(e.target.value))}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="País de destino"
+              >
+                {PAISES.map((p, i) => (
+                  <option key={p.codigoPais} value={i}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+          <div className="px-4 py-3 text-sm">
+            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
+              Domicilio
+            </span>
+            <input
+              value={clienteDomicilio}
+              onChange={(e) => setClienteDomicilio(e.target.value)}
+              autoCapitalize="words"
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+            />
+            {fieldErrors["clienteDomicilio"] && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {fieldErrors["clienteDomicilio"]}
+              </p>
+            )}
+          </div>
+          <div className="px-4 py-3 text-sm">
+            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
+              ID fiscal extranjero (opcional)
+            </span>
+            <input
+              value={clienteIdImpositivo}
+              onChange={(e) => setClienteIdImpositivo(e.target.value)}
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+            />
+          </div>
+        </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            País de destino
+      {/* COMPROBANTE */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+          Comprobante
+        </h3>
+        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
+          <label className="flex items-center justify-between px-4 py-3 text-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">Moneda</span>
+            <div className="relative flex items-center">
+              <span className="pr-1 text-neutral-900 dark:text-neutral-100">
+                {monedaFull.label}
+              </span>
+              <span className="text-neutral-400">›</span>
+              <select
+                value={monedaId}
+                onChange={(e) => setMonedaId(e.target.value)}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="Moneda"
+              >
+                {MONEDAS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </label>
-          <select
-            value={paisIdx}
-            onChange={(e) => setPaisIdx(Number(e.target.value))}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          >
-            {PAISES.map((p, i) => (
-              <option key={p.codigoPais} value={i}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            ID fiscal extranjero (opcional)
-          </label>
-          <input
-            value={clienteIdImpositivo}
-            onChange={(e) => setClienteIdImpositivo(e.target.value)}
-            placeholder=""
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Domicilio del cliente
-        </label>
-        <input
-          value={clienteDomicilio}
-          onChange={(e) => setClienteDomicilio(e.target.value)}
-          placeholder=""
-          autoCapitalize="words"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-        />
-        {fieldErrors["clienteDomicilio"] && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {fieldErrors["clienteDomicilio"]}
-          </p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Moneda
-          </label>
-          <select
-            value={monedaId}
-            onChange={(e) => setMonedaId(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          >
-            {MONEDAS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Cotización → ARS
-          </label>
-          <div className="flex gap-2">
+          <div className="px-4 py-3 text-sm">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                Cotización oficial de AFIP
+              </span>
+              <button
+                type="button"
+                onClick={traerCotizacion}
+                disabled={cotizStatus === "loading"}
+                className="text-xs font-semibold text-[#003366] disabled:opacity-50 dark:text-[#7bb0e0]"
+              >
+                {cotizStatus === "loading" ? "..." : "Traer"}
+              </button>
+            </div>
             <input
               value={monedaCotizacion}
               onChange={(e) => setMonedaCotizacion(e.target.value)}
               type="number"
               min={0}
               step="any"
-              placeholder=""
-              className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
+              inputMode="decimal"
+              className="w-full border-0 bg-transparent p-0 text-base tabular-nums text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
             />
-            <button
-              type="button"
-              onClick={traerCotizacion}
-              disabled={cotizStatus === "loading"}
-              className="shrink-0 rounded-md border border-[#003366] px-3 text-xs font-medium text-[#003366] hover:bg-[#003366]/5 disabled:opacity-50 dark:border-[#7bb0e0] dark:text-[#7bb0e0] dark:hover:bg-[#7bb0e0]/10"
-            >
-              {cotizStatus === "loading" ? "..." : "Traer"}
-            </button>
+            {(fieldErrors["monedaCotizacion"] || cotizStatus === "error") && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                {fieldErrors["monedaCotizacion"] ??
+                  "No se pudo traer la cotización — cargala a mano."}
+              </p>
+            )}
           </div>
-          {fieldErrors["monedaCotizacion"] && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-              {fieldErrors["monedaCotizacion"]}
-            </p>
-          )}
-          {cotizStatus === "error" && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-              No se pudo traer la cotización — cargala a mano.
-            </p>
-          )}
-        </div>
-      </div>
-      <p className="-mt-4 text-xs text-neutral-500 dark:text-neutral-400">
-        &quot;Traer&quot; consulta la cotización oficial que AFIP tiene registrada
-        para hoy — es exactamente la que ARCA acepta al emitir la Factura E.
-      </p>
-
-      {(tipoExpo === 2 || tipoExpo === 4) && (
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Fecha de pago
-          </label>
-          <input
-            type="date"
-            value={fechaPago}
-            onChange={(e) => setFechaPago(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          />
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            AFIP exige la fecha de pago en Factura E de servicios. Default: 30 días
-            desde hoy.
-          </p>
-          {fieldErrors["fechaPago"] && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-              {fieldErrors["fechaPago"]}
-            </p>
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Tipo de exportación
-          </label>
-          <select
-            value={tipoExpo}
-            onChange={(e) => setTipoExpo(Number(e.target.value))}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          >
-            {TIPO_EXPO.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Idioma del comprobante
-          </label>
-          <select
-            value={idiomaCbte}
-            onChange={(e) => setIdiomaCbte(Number(e.target.value))}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-          >
-            {IDIOMA_CBTE.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Ítems
-        </label>
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={index} className="grid grid-cols-12 gap-2">
+          {(tipoExpo === 2 || tipoExpo === 4) && (
+            <div className="px-4 py-3 text-sm">
+              <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
+                Fecha de pago
+              </span>
               <input
-                value={item.descripcion}
-                onChange={(e) => updateItem(index, { descripcion: e.target.value })}
-                placeholder=""
-                autoCapitalize="sentences"
-                spellCheck
-                className="col-span-6 rounded-md border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
+                type="date"
+                value={fechaPago}
+                onChange={(e) => setFechaPago(e.target.value)}
+                className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
               />
-              <input
-                value={item.cantidad}
-                onChange={(e) => updateItem(index, { cantidad: e.target.value })}
-                type="number"
-                min={0}
-                step="any"
-                placeholder=""
-                className="col-span-2 rounded-md border border-neutral-300 px-2 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-              />
-              <input
-                value={item.precioUnitario}
-                onChange={(e) => updateItem(index, { precioUnitario: e.target.value })}
-                type="number"
-                min={0}
-                step="any"
-                placeholder=""
-                className="col-span-3 rounded-md border border-neutral-300 px-2 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
-              />
-              <button
-                type="button"
-                onClick={() => removeItem(index)}
-                className="col-span-1 text-neutral-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
-                aria-label="Quitar ítem"
-              >
-                ✕
-              </button>
+              {fieldErrors["fechaPago"] && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {fieldErrors["fechaPago"]}
+                </p>
+              )}
             </div>
-          ))}
+          )}
+          <label className="flex items-center justify-between px-4 py-3 text-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">Tipo</span>
+            <div className="relative flex items-center">
+              <span className="pr-1 text-neutral-900 dark:text-neutral-100">{tipoExpoLabel}</span>
+              <span className="text-neutral-400">›</span>
+              <select
+                value={tipoExpo}
+                onChange={(e) => setTipoExpo(Number(e.target.value))}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="Tipo de exportación"
+              >
+                {TIPO_EXPO.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+          <label className="flex items-center justify-between px-4 py-3 text-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">Idioma</span>
+            <div className="relative flex items-center">
+              <span className="pr-1 text-neutral-900 dark:text-neutral-100">{idiomaLabel}</span>
+              <span className="text-neutral-400">›</span>
+              <select
+                value={idiomaCbte}
+                onChange={(e) => setIdiomaCbte(Number(e.target.value))}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="Idioma del comprobante"
+              >
+                {IDIOMA_CBTE.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      {/* ÍTEMS */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+          Ítems
+        </h3>
+        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
+          {items.map((item, index) => {
+            const cantN = Number(item.cantidad) || 0;
+            const precN = Number(item.precioUnitario) || 0;
+            const subtotal = cantN * precN;
+            return (
+              <div key={index} className="px-4 py-3">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <input
+                    value={item.descripcion}
+                    onChange={(e) => updateItem(index, { descripcion: e.target.value })}
+                    autoCapitalize="sentences"
+                    spellCheck
+                    className="flex-1 border-0 bg-transparent p-0 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
+                  />
+                  <span className="min-w-[5rem] text-right text-sm font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">
+                    {monedaFull.symbol}
+                    {subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  <input
+                    value={item.cantidad}
+                    onChange={(e) => updateItem(index, { cantidad: e.target.value })}
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    className="w-12 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
+                  />
+                  <span>×</span>
+                  <input
+                    value={item.precioUnitario}
+                    onChange={(e) => updateItem(index, { precioUnitario: e.target.value })}
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    className="flex-1 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
+                  />
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      aria-label="Quitar ítem"
+                      className="text-neutral-400 hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            onClick={addItem}
+            className="w-full px-4 py-3 text-left text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:text-[#7bb0e0] dark:hover:bg-[#7bb0e0]/10"
+          >
+            + Agregar ítem
+          </button>
         </div>
         {fieldErrors["items"] && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors["items"]}</p>
         )}
-        <button
-          type="button"
-          onClick={addItem}
-          className="mt-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-        >
-          + Agregar ítem
-        </button>
-      </div>
+      </section>
 
       {status === "error" && errorMessage && (
         <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">

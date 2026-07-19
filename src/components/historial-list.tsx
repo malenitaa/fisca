@@ -104,32 +104,40 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
     [filtered]
   );
 
-  // Resumen del período actual (mes en curso) — sólo Factura C/E en pesos
-  // para el card destacado. Facturas E en USD no se suman por diferencia
-  // de moneda.
+  // Resumen del período actual (mes en curso), separando por moneda para
+  // no mezclar pesos con dólares. Ignora anuladas.
   const currentMonth = new Date().toISOString().slice(0, 7);
   const summary = useMemo(() => {
     const filas = invoices.filter(
-      (i) =>
-        i.fecha_emision.startsWith(currentMonth) &&
-        !idsAnulados.has(i.id) &&
-        (!i.moneda || i.moneda === "PES")
+      (i) => i.fecha_emision.startsWith(currentMonth) && !idsAnulados.has(i.id)
     );
-    const totalArs = filas.reduce((s, i) => s + Number(i.importe_total), 0);
-    return { total: totalArs, count: filas.length };
+    const totalArs = filas
+      .filter((i) => !i.moneda || i.moneda === "PES")
+      .reduce((s, i) => s + Number(i.importe_total), 0);
+    const totalUsd = filas
+      .filter((i) => i.moneda === "DOL")
+      .reduce((s, i) => s + Number(i.importe_total), 0);
+    return { totalArs, totalUsd, count: filas.length };
   }, [invoices, idsAnulados, currentMonth]);
 
   return (
     <div>
-      {/* Card resumen del mes en curso — matcheando el mockup */}
+      {/* Card resumen del mes en curso — separado por moneda para no mezclar
+       * pesos con dólares. Si sólo hay una moneda, se muestra sólo esa. */}
       <div className="mb-4 rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs opacity-80">Facturado este mes</p>
-            <p className="mt-1 text-2xl font-semibold">
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
               $
-              {summary.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              {summary.totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </p>
+            {summary.totalUsd > 0 && (
+              <p className="mt-1 text-sm opacity-90 tabular-nums">
+                + US$
+                {summary.totalUsd.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-xs opacity-80">Comprobantes</p>
@@ -168,7 +176,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           <option value="todos">Tipo</option>
           <option value="factura_c">Factura C</option>
           <option value="factura_e">Factura E</option>
-          <option value="nota">Notas de crédito</option>
+          <option value="nota">N. de crédito</option>
         </select>
       </div>
 
@@ -246,7 +254,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                   </span>
                   <a
                     href={`/api/facturas/${inv.id}/pdf`}
-                    target="_blank"
+                    download
                     aria-label="Descargar PDF"
                     className="text-neutral-400 hover:text-[#003366] dark:hover:text-[#7bb0e0]"
                   >
