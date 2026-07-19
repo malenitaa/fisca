@@ -6,45 +6,55 @@ import {
   authenticateWithPasskey,
   userHasPasskey,
 } from "./passkey-client";
+import {
+  isNativeBiometricAvailable,
+  enrollNativeBiometric,
+  authenticateNativeBiometric,
+  isNativeBiometricEnrolled,
+} from "./native-biometric";
 
 /**
- * API pública de biometría. Hoy delega en WebAuthn/Passkeys porque la app
- * corre en un WebView que carga fisca.vercel.app. Cuando migremos a
- * bundled (Capacitor con `webDir`) vamos a agregar una implementación
- * nativa (LocalAuthentication.framework via plugin de Capacitor) y este
- * módulo va a elegir el backend en runtime — el resto de la app no
- * necesita saber cuál.
+ * API pública de biometría. Elige la implementación en runtime:
  *
- * Contrato:
- *   isBiometricSupported() → ¿el dispositivo puede hacer biometría?
- *   hasBiometricEnrolled() → ¿este user ya enroló su cara/huella?
- *   registerBiometric()    → enrola. Puede tirar error si el user cancela.
- *   authenticateBiometric() → prompt de cara/huella. true si ok, false si
- *                            falló/canceló.
+ * 1. **Native (Capacitor iOS)**: plugin @aparajita/capacitor-biometric-auth
+ *    → prompt nativo de Face ID / Touch ID. No requiere Associated Domains
+ *    ni Apple Developer pago. Se detecta cuando `Capacitor.Plugins.BiometricAuth`
+ *    está expuesto en la WebView.
+ * 2. **WebAuthn/Passkey (browser/PWA)**: fallback cuando corre en Safari o
+ *    Chrome sin el shell nativo. Requiere Associated Domains configurados.
+ *
+ * El resto de la app usa esta API sin saber cuál está activa.
  */
 
-type Strategy = "webauthn" | "native";
+type Strategy = "native" | "webauthn" | "none";
 
-/** Elegimos el backend en runtime. Por ahora siempre WebAuthn. Cuando
- * agreguemos el plugin nativo de Capacitor, retornamos "native" si
- * `Capacitor.isNativePlatform()`. */
 function getStrategy(): Strategy {
-  return "webauthn";
+  if (isNativeBiometricAvailable()) return "native";
+  if (isPasskeySupported()) return "webauthn";
+  return "none";
 }
 
 export function isBiometricSupported(): boolean {
-  return getStrategy() === "webauthn" ? isPasskeySupported() : false;
+  return getStrategy() !== "none";
 }
 
 export async function hasBiometricEnrolled(): Promise<boolean> {
-  return getStrategy() === "webauthn" ? userHasPasskey() : false;
+  const strategy = getStrategy();
+  if (strategy === "native") return isNativeBiometricEnrolled();
+  if (strategy === "webauthn") return userHasPasskey();
+  return false;
 }
 
 export async function registerBiometric(): Promise<void> {
-  if (getStrategy() === "webauthn") return registerPasskey();
+  const strategy = getStrategy();
+  if (strategy === "native") return enrollNativeBiometric();
+  if (strategy === "webauthn") return registerPasskey();
   throw new Error("Biometría no disponible en este dispositivo.");
 }
 
 export async function authenticateBiometric(): Promise<boolean> {
-  return getStrategy() === "webauthn" ? authenticateWithPasskey() : false;
+  const strategy = getStrategy();
+  if (strategy === "native") return authenticateNativeBiometric();
+  if (strategy === "webauthn") return authenticateWithPasskey();
+  return false;
 }
