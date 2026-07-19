@@ -1,19 +1,32 @@
 /**
- * Estado local de "unlock". El unlock es una gate cliente-side sobre el
- * WebView — la sesión de Supabase sigue viva; solo bloqueamos la UI hasta
- * que la usuaria pruebe Face ID / PIN.
+ * Estado de "unlock" cliente-side. La sesión de Supabase sigue viva; solo
+ * bloqueamos la UI hasta que la usuaria pruebe Face ID / PIN.
  *
- * Se guarda en localStorage porque es específico del dispositivo: si mando
- * el link a otro celular, ese celular no debería estar "unlocked".
+ * Diseño:
+ * - `enabled` vive en localStorage (persiste entre app closes, es una
+ *   preferencia del dispositivo).
+ * - `unlocked` vive solo en memoria (variable de módulo). Cada vez que el
+ *   WebView se recarga (o la app se abre desde cero), unlocked vuelve a
+ *   false y la gate dispara.
+ * - Además, si el WebView pasa a background (visibilitychange → hidden)
+ *   limpiamos unlocked, así al volver la app pide re-auth aunque no se
+ *   haya matado el proceso.
  */
 
 const KEY_ENABLED = "fisca.unlock.enabled";
-const KEY_UNLOCKED_AT = "fisca.unlock.unlocked_at";
 
-// Duración de un unlock: cuánto tiempo pueden pasar sin volver a pedir
-// biometría/PIN. 15 minutos alcanza para trabajar sin fricción y a la vez
-// re-gatea si dejaste el celu sin bloquear.
-const UNLOCK_TTL_MS = 15 * 60 * 1000;
+let unlocked = false;
+let listenerInstalled = false;
+
+function installListener() {
+  if (listenerInstalled || typeof document === "undefined") return;
+  listenerInstalled = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      unlocked = false;
+    }
+  });
+}
 
 export function isUnlockEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -26,26 +39,21 @@ export function setUnlockEnabled(enabled: boolean): void {
     window.localStorage.setItem(KEY_ENABLED, "true");
   } else {
     window.localStorage.removeItem(KEY_ENABLED);
-    window.localStorage.removeItem(KEY_UNLOCKED_AT);
+    unlocked = false;
   }
 }
 
 export function markUnlocked(): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY_UNLOCKED_AT, String(Date.now()));
+  unlocked = true;
+  installListener();
 }
 
 export function isCurrentlyUnlocked(): boolean {
   if (typeof window === "undefined") return true;
   if (!isUnlockEnabled()) return true;
-  const at = window.localStorage.getItem(KEY_UNLOCKED_AT);
-  if (!at) return false;
-  const parsed = parseInt(at, 10);
-  if (!Number.isFinite(parsed)) return false;
-  return Date.now() - parsed < UNLOCK_TTL_MS;
+  return unlocked;
 }
 
 export function clearUnlock(): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(KEY_UNLOCKED_AT);
+  unlocked = false;
 }

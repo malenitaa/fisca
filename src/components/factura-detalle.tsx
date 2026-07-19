@@ -3,13 +3,8 @@
 import { useState } from "react";
 import { AnularFacturaButton } from "@/components/anular-factura-button";
 
-interface CapacitorBrowserPlugin {
-  open(options: { url: string }): Promise<void>;
-}
-
 interface CapacitorGlobal {
   isNativePlatform?: () => boolean;
-  Plugins?: { Browser?: CapacitorBrowserPlugin };
 }
 
 interface Props {
@@ -36,55 +31,69 @@ export function FacturaDetalle({
   puedeAnular,
 }: Props) {
   const [sharing, setSharing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  /** Dentro del WKWebView de Capacitor el atributo `download` de un <a> no
-   * hace nada — WKWebView no tiene gestor de descargas, así que navega
-   * toda la app al PDF crudo y no queda forma de volver. Lo abrimos con
-   * el plugin Browser (SFSafariViewController con su propio botón de
-   * volver) en vez de navegar el webview principal. En browser normal
-   * (no Capacitor), dejamos que el <a href download> haga lo suyo. */
+  async function fetchPdfBlob(): Promise<Blob> {
+    const res = await fetch(`/api/facturas/${facturaId}/pdf`);
+    if (!res.ok) throw new Error("No se pudo obtener el PDF.");
+    return res.blob();
+  }
+
+  /** Descarga in-app: en Capacitor abrimos el share sheet nativo con el
+   * archivo (permite "Save to Files", "Enviar por AirDrop", etc.); en
+   * browser común, guardamos vía <a download> con blob URL. Nunca abrimos
+   * SFSafariViewController porque su cookie jar es distinto y pide login. */
   async function descargar(e: React.MouseEvent<HTMLAnchorElement>) {
-    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
-    if (!cap?.isNativePlatform?.()) return;
-
     e.preventDefault();
-    const browser = cap.Plugins?.Browser;
-    if (browser) {
-      await browser.open({ url: `${window.location.origin}/api/facturas/${facturaId}/pdf` });
+    setDownloading(true);
+    try {
+      const blob = await fetchPdfBlob();
+      const filename = `factura-${numero}.pdf`;
+      const file = new File([blob], filename, { type: "application/pdf" });
+
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+      const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+      const isNative = cap?.isNativePlatform?.() ?? false;
+
+      if (isNative && nav.share && nav.canShare?.({ files: [file] })) {
+        // iOS share sheet: incluye "Guardar en archivos" como opción.
+        await nav.share({ files: [file], title: filename });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Cancelado o error — no-op.
+    } finally {
+      setDownloading(false);
     }
   }
 
   async function compartir() {
     setSharing(true);
-    const pdfUrl = `/api/facturas/${facturaId}/pdf`;
     const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}`;
-
     try {
-      // Bajamos el PDF como blob y lo pasamos como File a la Web Share API.
-      // Así WhatsApp recibe el archivo adjunto directamente (no un link a
-      // fisca.vercel.app).
-      const res = await fetch(pdfUrl);
-      const blob = await res.blob();
+      const blob = await fetchPdfBlob();
       const file = new File([blob], `factura-${numero}.pdf`, {
         type: "application/pdf",
       });
-
       const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
       };
 
-      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
-        await nav.share({
-          files: [file],
-          title: `${titulo} ${numero}`,
-          text: texto,
-        });
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: `${titulo} ${numero}`, text: texto });
       } else if (nav.share) {
-        // Fallback: no soporta archivos → compartimos el link (browsers
-        // sin soporte de files pero con Web Share).
-        await nav.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
+        await nav.share({ title: `${titulo} ${numero}`, text: texto });
       } else {
-        // Sin Web Share: abrimos wa.me con el texto (sin archivo).
         window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
       }
     } catch {
@@ -139,11 +148,10 @@ export function FacturaDetalle({
         </button>
         <a
           href={`/api/facturas/${facturaId}/pdf`}
-          download
           onClick={descargar}
           className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
         >
-          Descargar PDF
+          {downloading ? "Descargando..." : "Descargar PDF"}
         </a>
         {puedeAnular && (
           <div className="mt-4 border-t border-neutral-200 pt-4 text-center dark:border-neutral-800">
