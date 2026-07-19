@@ -32,6 +32,12 @@ export function NuevaFacturaEForm() {
   const [monedaCotizacion, setMonedaCotizacion] = useState("");
   const [tipoExpo, setTipoExpo] = useState<number>(2);
   const [idiomaCbte, setIdiomaCbte] = useState<number>(1);
+  const [fechaPago, setFechaPago] = useState<string>(() => {
+    // Default: hoy + 30 días (razonable para servicios facturados por Deel).
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
   const [items, setItems] = useState<ItemRow[]>([{ ...emptyItem }]);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -112,6 +118,7 @@ export function NuevaFacturaEForm() {
       monedaCotizacion,
       tipoExpo,
       idiomaCbte,
+      fechaPago: fechaPago || undefined,
       items: items.map((it) => ({
         descripcion: capitalize(it.descripcion.trim()),
         cantidad: it.cantidad,
@@ -309,6 +316,29 @@ export function NuevaFacturaEForm() {
         &quot;Traer&quot; consulta la cotización oficial que AFIP tiene registrada
         para hoy — es exactamente la que ARCA acepta al emitir la Factura E.
       </p>
+
+      {(tipoExpo === 2 || tipoExpo === 4) && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Fecha de pago
+          </label>
+          <input
+            type="date"
+            value={fechaPago}
+            onChange={(e) => setFechaPago(e.target.value)}
+            className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
+          />
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            AFIP exige la fecha de pago en Factura E de servicios. Default: 30 días
+            desde hoy.
+          </p>
+          {fieldErrors["fechaPago"] && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {fieldErrors["fechaPago"]}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>

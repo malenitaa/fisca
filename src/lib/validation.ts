@@ -77,7 +77,17 @@ export const nuevaFacturaESchema = z.object({
   monedaCotizacion: z.coerce.number().positive("La cotización debe ser positiva."),
   tipoExpo: z.coerce.number().int().refine((v) => [1, 2, 4].includes(v)),
   idiomaCbte: z.coerce.number().int().refine((v) => [1, 2, 3].includes(v)),
+  fechaPago: z.string().optional(),
   items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
+}).superRefine((data, ctx) => {
+  // ARCA exige Fecha_pago cuando tipo_expo es servicios (2) u otros (4).
+  if ((data.tipoExpo === 2 || data.tipoExpo === 4) && !data.fechaPago) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["fechaPago"],
+      message: "La fecha de pago es obligatoria en Factura E de servicios/otros.",
+    });
+  }
 });
 
 export type NuevaFacturaEFormInput = z.infer<typeof nuevaFacturaESchema>;
