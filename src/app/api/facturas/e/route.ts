@@ -100,7 +100,7 @@ export async function POST(request: Request) {
         cbte_tipo: CBTE_TIPO_FACTURA_E,
         punto_venta: config.punto_venta,
         numero_comprobante: numeroComprobante,
-        concepto: input.tipoExpo === 2 ? 1 : 2, // best-effort: bienes=1, servicios/otros=2
+        concepto: input.tipoExpo === 1 ? 1 : 2, // AFIP: tipo_expo 1=bienes, 2=servicios, 4=otros
         cliente_doc_tipo: null,
         cliente_doc_nro: null,
         cliente_nombre: input.clienteNombre,
