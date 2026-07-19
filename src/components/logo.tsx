@@ -18,3 +18,27 @@ export function LogoIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+/** Rayo de Fisca sin el contenedor cuadrado (2e del design): sólo la marca
+ * blanca, recortada a su bounding box. Pensado para fondos ya azules
+ * (splash). `pulse` la hace latir como indicador de carga. */
+export function LogoBolt({
+  className = "",
+  pulse = false,
+}: {
+  className?: string;
+  pulse?: boolean;
+}) {
+  return (
+    <svg viewBox="128 56 256 400" className={className} aria-hidden>
+      <path
+        d="M292 96 L172 300 H248 L226 416 L346 212 H270 Z"
+        fill="#ffffff"
+        stroke="#ffffff"
+        strokeWidth="26"
+        strokeLinejoin="round"
+        style={pulse ? { animation: "fisca-splash-pulse 1.4s ease-in-out infinite" } : undefined}
+      />
+    </svg>
+  );
+}
