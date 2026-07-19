@@ -125,6 +125,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Guardar/actualizar el cliente en la libreta de contactos para autocompletar
+    // en la próxima factura. Consumidor Final (99) no se guarda (no hay identidad).
+    if (input.docTipo !== 99 && facturaInput.docNro) {
+      await supabase.from("clientes").upsert(
+        {
+          user_id: user.id,
+          doc_tipo: input.docTipo,
+          doc_numero: facturaInput.docNro,
+          nombre: input.clienteNombre ?? "",
+          condicion_iva_id: input.condicionIvaReceptorId,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,doc_tipo,doc_numero" }
+      );
+    }
+
     return NextResponse.json({
       facturaId: inserted.id,
       cae: cae.cae,
