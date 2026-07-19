@@ -84,10 +84,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     comprobanteAsociado,
   });
 
+  // `attachment` fuerza el download nativo del sistema en vez de abrir en
+  // una tab nueva de Safari (que rompía la sesión de PWA). En iOS abre
+  // el share sheet directamente para guardar en Files o compartir.
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="factura-${invoice.punto_venta}-${invoice.numero_comprobante}.pdf"`,
+      "Content-Disposition": `attachment; filename="factura-${invoice.punto_venta}-${invoice.numero_comprobante}.pdf"`,
     },
   });
 }
