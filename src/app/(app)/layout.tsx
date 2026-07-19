@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomTabs } from "@/components/bottom-tabs";
 import { ShakeToFeedback } from "@/components/shake-to-feedback";
+import { UnlockGate } from "@/components/unlock-gate";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -27,11 +28,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         paddingTop: "env(safe-area-inset-top)",
       }}
     >
-      <main className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto w-full max-w-2xl px-4 pt-4">{children}</div>
-      </main>
-      <BottomTabs />
-      <ShakeToFeedback />
+      <UnlockGate>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="mx-auto w-full max-w-2xl px-4 pt-4">{children}</div>
+        </main>
+        <BottomTabs />
+        <ShakeToFeedback />
+      </UnlockGate>
     </div>
   );
 }
