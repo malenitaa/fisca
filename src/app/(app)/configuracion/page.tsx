@@ -15,6 +15,23 @@ export default async function PerfilPage() {
     .eq("user_id", user!.id)
     .maybeSingle();
 
+  const existing = config
+    ? {
+        cuit: config.cuit,
+        razonSocial: config.razon_social ?? "",
+        puntoVenta: config.punto_venta,
+        ambiente: config.ambiente as "homologacion" | "produccion",
+      }
+    : null;
+
+  // Primera vez: el wizard de ConfiguracionForm ya trae su propio título y
+  // texto de "paso X de 2" — no duplicamos header ni mostramos todavía el
+  // resto de Perfil (Ayuda/cerrar sesión), la persona ni tiene cuenta
+  // vinculada aún.
+  if (!existing) {
+    return <ConfiguracionForm existing={null} />;
+  }
+
   return (
     <div className="space-y-6">
       <header>
@@ -30,19 +47,12 @@ export default async function PerfilPage() {
           Se carga una sola vez. El certificado y la clave privada se guardan cifrados y nunca se
           muestran de nuevo.
         </p>
-        <ConfiguracionForm
-          existing={
-            config
-              ? {
-                  cuit: config.cuit,
-                  razonSocial: config.razon_social ?? "",
-                  puntoVenta: config.punto_venta,
-                  ambiente: config.ambiente as "homologacion" | "produccion",
-                }
-              : null
-          }
-        />
+        <ConfiguracionForm existing={existing} />
       </section>
+
+      {/* Cuenta y seguridad (Face ID / PIN / vincular email) va acá como su
+       * propia sección, después de esta — no la mezclamos con el form de
+       * ARCA de arriba. */}
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">Más</h2>

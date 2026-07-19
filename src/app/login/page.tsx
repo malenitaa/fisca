@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   return (
     <main
-      className="fixed inset-0 flex flex-col items-center justify-center px-6"
+      className="fixed inset-0 flex flex-col items-center justify-center bg-white px-6 dark:bg-neutral-950"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "env(safe-area-inset-bottom)",
