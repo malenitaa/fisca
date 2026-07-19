@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { markUnlocked, setUnlockEnabled } from "@/lib/unlock";
-import { isPasskeySupported, registerPasskey } from "@/lib/passkey-client";
+import { isBiometricSupported, registerBiometric } from "@/lib/biometric";
 
 type Step = "email" | "pin" | "confirm" | "faceid" | "sent";
 
@@ -59,7 +59,7 @@ export default function VincularPage() {
     }
     setUnlockEnabled(true);
     markUnlocked();
-    if (isPasskeySupported()) {
+    if (isBiometricSupported()) {
       setStep("faceid");
     } else {
       setStep("sent");
@@ -70,7 +70,7 @@ export default function VincularPage() {
     setError("");
     setSubmitting(true);
     try {
-      await registerPasskey();
+      await registerBiometric();
     } catch (err) {
       // Si el user cancela o el WebView no soporta, seguimos con PIN nomás.
       setError(err instanceof Error ? err.message : "No se pudo activar Face ID.");

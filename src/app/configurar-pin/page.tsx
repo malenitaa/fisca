@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { markUnlocked, setUnlockEnabled } from "@/lib/unlock";
-import { isPasskeySupported, registerPasskey } from "@/lib/passkey-client";
+import { isBiometricSupported, registerBiometric } from "@/lib/biometric";
 
 type Step = "pin" | "confirm" | "faceid" | "done";
 
@@ -48,7 +48,7 @@ export default function ConfigurarPinPage() {
     }
     setUnlockEnabled(true);
     markUnlocked();
-    if (isPasskeySupported()) {
+    if (isBiometricSupported()) {
       setStep("faceid");
     } else {
       setStep("done");
@@ -59,7 +59,7 @@ export default function ConfigurarPinPage() {
     setError("");
     setSubmitting(true);
     try {
-      await registerPasskey();
+      await registerBiometric();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo activar Face ID.");
     }

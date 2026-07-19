@@ -4,10 +4,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { markUnlocked, isUnlockEnabled } from "@/lib/unlock";
 import {
-  authenticateWithPasskey,
-  isPasskeySupported,
-  userHasPasskey,
-} from "@/lib/passkey-client";
+  authenticateBiometric,
+  isBiometricSupported,
+  hasBiometricEnrolled,
+} from "@/lib/biometric";
 
 type Step = "biometric" | "pin" | "recover" | "recovered";
 
@@ -34,16 +34,16 @@ export default function DesbloquearPage() {
   }, []);
 
   async function tryBiometric() {
-    if (!isPasskeySupported()) {
+    if (!isBiometricSupported()) {
       setStep("pin");
       return;
     }
-    const has = await userHasPasskey();
+    const has = await hasBiometricEnrolled();
     if (!has) {
       setStep("pin");
       return;
     }
-    const ok = await authenticateWithPasskey();
+    const ok = await authenticateBiometric();
     if (ok) {
       markUnlocked();
       router.replace(next);
