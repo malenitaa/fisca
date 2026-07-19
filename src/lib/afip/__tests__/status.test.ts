@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { EventEmitter } from "node:events";
+
+const { mockHttpsRequest } = vi.hoisted(() => ({ mockHttpsRequest: vi.fn() }));
+
+vi.mock("node:https", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:https")>();
+  return { ...actual, request: mockHttpsRequest };
+});
 
 function dummyXml(tag: string, ns: string, ok: boolean) {
   const status = ok ? "OK" : "NO OK";
@@ -16,26 +24,60 @@ function dummyXml(tag: string, ns: string, ok: boolean) {
 </soapenv:Envelope>`;
 }
 
-/** Responde OK a los 4 dummy calls (wsfe+wsfex × homologación+producción),
- * salvo que se indique ok:false para alguna URL de endpoint puntual. */
-function stubFetch(overrides: Record<string, boolean> = {}) {
+function xmlFor(soapAction: string, ok: boolean) {
+  return soapAction.includes("FEXDummy")
+    ? dummyXml("FEXDummy", "http://ar.gov.afip.dif.fexv1/", ok)
+    : dummyXml("FEDummy", "http://ar.gov.afip.dif.FEV1/", ok);
+}
+
+/** Homologación (wswhomo.afip.gov.ar) sigue yendo por `fetch`. */
+function stubFetchHomologacion(overrides: Record<string, boolean> = {}) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init: RequestInit) => {
       const soapAction = (init.headers as Record<string, string>).SOAPAction;
-      const isFex = soapAction.includes("FEXDummy");
       const ok = overrides[url] ?? true;
-      const xml = isFex
-        ? dummyXml("FEXDummy", "http://ar.gov.afip.dif.fexv1/", ok)
-        : dummyXml("FEDummy", "http://ar.gov.afip.dif.FEV1/", ok);
-      return new Response(xml, { status: 200 });
+      return new Response(xmlFor(soapAction, ok), { status: 200 });
     })
   );
+}
+
+/** Producción (servicios1.afip.gov.ar) va por node:https con el Agent
+ * legacy — ver soap.ts. */
+function stubHttpsProduccion(overrides: Record<string, boolean> = {}) {
+  mockHttpsRequest.mockImplementation(
+    (
+      url: string,
+      options: { headers: Record<string, string> },
+      callback: (res: EventEmitter & { statusCode: number }) => void
+    ) => {
+      const ok = overrides[url] ?? true;
+      const res = Object.assign(new EventEmitter(), { statusCode: 200 });
+      queueMicrotask(() => {
+        callback(res);
+        res.emit("data", Buffer.from(xmlFor(options.headers.SOAPAction, ok)));
+        res.emit("end");
+      });
+      return Object.assign(new EventEmitter(), { write: vi.fn(), end: vi.fn() });
+    }
+  );
+}
+
+function stubHttpsProduccionDown() {
+  mockHttpsRequest.mockImplementation(() => {
+    const req = new EventEmitter() as EventEmitter & { write: () => void; end: () => void };
+    req.write = vi.fn();
+    req.end = vi.fn(() => {
+      queueMicrotask(() => req.emit("error", new Error("network down")));
+    });
+    return req;
+  });
 }
 
 beforeEach(() => {
   vi.resetModules();
   vi.useRealTimers();
+  mockHttpsRequest.mockReset();
 });
 
 afterEach(() => {
@@ -44,7 +86,8 @@ afterEach(() => {
 
 describe("getAfipStatus", () => {
   it("ok:true cuando WSFE y WSFEX de producción responden OK", async () => {
-    stubFetch();
+    stubFetchHomologacion();
+    stubHttpsProduccion();
     const { getAfipStatus } = await import("../status");
 
     const status = await getAfipStatus();
@@ -56,7 +99,8 @@ describe("getAfipStatus", () => {
   });
 
   it("ok:false si producción WSFE reporta problemas, aunque homologación esté OK", async () => {
-    stubFetch({ "https://servicios1.afip.gov.ar/wsfev1/service.asmx": false });
+    stubFetchHomologacion();
+    stubHttpsProduccion({ "https://servicios1.afip.gov.ar/wsfev1/service.asmx": false });
     const { getAfipStatus } = await import("../status");
 
     const status = await getAfipStatus();
@@ -67,7 +111,8 @@ describe("getAfipStatus", () => {
   });
 
   it("homologación caída no afecta el ok general (solo importa producción)", async () => {
-    stubFetch({ "https://wswhomo.afip.gov.ar/wsfev1/service.asmx": false });
+    stubFetchHomologacion({ "https://wswhomo.afip.gov.ar/wsfev1/service.asmx": false });
+    stubHttpsProduccion();
     const { getAfipStatus } = await import("../status");
 
     const status = await getAfipStatus();
@@ -83,6 +128,7 @@ describe("getAfipStatus", () => {
         throw new Error("network down");
       })
     );
+    stubHttpsProduccionDown();
     const { getAfipStatus } = await import("../status");
 
     const status = await getAfipStatus();
@@ -92,14 +138,17 @@ describe("getAfipStatus", () => {
   });
 
   it("cachea el resultado 60s: la segunda llamada no vuelve a pegarle a AFIP", async () => {
-    stubFetch();
+    stubFetchHomologacion();
+    stubHttpsProduccion();
     const { getAfipStatus } = await import("../status");
     const fetchSpy = vi.mocked(fetch);
 
     await getAfipStatus();
-    const callsAfterFirst = fetchSpy.mock.calls.length;
+    const fetchCallsAfterFirst = fetchSpy.mock.calls.length;
+    const httpsCallsAfterFirst = mockHttpsRequest.mock.calls.length;
     await getAfipStatus();
 
-    expect(fetchSpy.mock.calls.length).toBe(callsAfterFirst);
+    expect(fetchSpy.mock.calls.length).toBe(fetchCallsAfterFirst);
+    expect(mockHttpsRequest.mock.calls.length).toBe(httpsCallsAfterFirst);
   });
 });

@@ -179,6 +179,40 @@ Cuando ya probaste el flujo completo en homologación:
 3. La primera factura que emitas en producción es una factura real ante
    ARCA — no hay vuelta atrás. Confirmá el punto de venta y los datos antes.
 
+### TLS legacy de AFIP en producción
+
+`servicios1.afip.gov.ar` (WSFEv1 y WSFEXv1 de **producción** — no
+homologación, no WSAA) todavía negocia TLS con un primo Diffie-Hellman
+demasiado chico para el nivel de seguridad default de OpenSSL 3. Con
+Node 18+ esto rompe con:
+
+```
+TypeError: fetch failed
+[cause]: Error: ...SSL routines:tls_process_ske_dhe:dh key too small...
+```
+
+Es un problema conocido de la infraestructura de ARCA (no algo que
+podamos arreglar de su lado) — reportado también por otras integraciones
+como [facturajs](https://github.com/emilioastarita/facturajs/issues/12),
+[pyafipws](https://github.com/reingart/pyafipws/issues/94) y
+[python-zeep](https://github.com/mvantellingen/python-zeep/issues/1229).
+
+**Cómo lo resolvimos** (`src/lib/afip/soap.ts`): en vez de bajar el nivel
+de seguridad de TLS globalmente (lo que debilitaría *todas* las
+conexiones del proceso, incluida Supabase), armamos un `https.Agent` de
+Node con `ciphers: "DEFAULT@SECLEVEL=1"` — sigue exigiendo TLS 1.2+ y
+cifrado fuerte, solo permite primos DH más chicos — y lo aplicamos
+**únicamente** a pedidos hacia `servicios1.afip.gov.ar`. Todo lo demás
+(WSAA, homologación, Supabase) sigue con la configuración default de
+Node/OpenSSL sin tocar.
+
+No se puede lograr lo mismo pasándole un `dispatcher` de `undici` (el
+paquete de npm) a `fetch`: el undici interno de Node y el de npm no son
+intercambiables entre sí (rompe con `invalid onRequestStart method`), así
+que para ese host puntual el POST se hace con `node:https` en vez de
+`fetch`. Ver los tests en `src/lib/afip/__tests__/soap.test.ts`, que
+confirman que la relajación de TLS no se filtra a otros hosts.
+
 ## Manejo de errores
 
 Cuando ARCA rechaza una factura (WSAA o WSFEv1), la app muestra el motivo
