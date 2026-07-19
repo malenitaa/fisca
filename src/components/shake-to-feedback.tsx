@@ -72,7 +72,7 @@ export function ShakeToFeedback() {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 h-dvh flex items-end justify-center bg-black/60 p-4"
       onClick={() => setOpen(false)}
     >
       <div

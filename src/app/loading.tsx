@@ -3,7 +3,7 @@ import { LogoBolt } from "@/components/logo";
 export default function Loading() {
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center bg-[#003366]"
+      className="fixed inset-0 h-dvh flex flex-col items-center justify-center bg-[#003366]"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "env(safe-area-inset-bottom)",
