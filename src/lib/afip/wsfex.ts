@@ -176,8 +176,9 @@ export interface NuevaFacturaEInput {
   clienteIdImpositivo?: string; // ID fiscal extranjero, opcional
   monedaId: string; // e.g. "DOL"
   monedaCotizacion: number;
-  tipoExpo: 1 | 2 | 4; // 1=servicios, 2=bienes, 4=otros
+  tipoExpo: 1 | 2 | 4; // AFIP: 1=bienes, 2=servicios, 4=otros
   idiomaCbte: 1 | 2 | 3; // 1=ES, 2=EN, 3=PT
+  fechaPago?: string; // YYYY-MM-DD; obligatorio si tipo=2 o 4
   items: FacturaItem[];
 }
 
@@ -253,7 +254,12 @@ export async function solicitarCaeE(params: {
       <ar:Idioma_cbte>${factura.idiomaCbte}</ar:Idioma_cbte>
       <ar:Items>
           ${itemsXml}
-      </ar:Items>
+      </ar:Items>${
+        factura.fechaPago
+          ? `
+      <ar:Fecha_pago>${factura.fechaPago.replaceAll("-", "")}</ar:Fecha_pago>`
+          : ""
+      }
     </ar:Cmp>
   </ar:FEXAuthorize>`;
 
