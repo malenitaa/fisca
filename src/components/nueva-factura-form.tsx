@@ -350,7 +350,9 @@ export function NuevaFacturaForm() {
                 value={item.descripcion}
                 onChange={(e) => updateItem(index, { descripcion: e.target.value })}
                 placeholder="Descripción"
-                className="col-span-6 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
+                autoCapitalize="sentences"
+                spellCheck
+                className="col-span-6 rounded-md border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
               />
               <input
                 value={item.cantidad}

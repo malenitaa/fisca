@@ -1,13 +1,17 @@
 import { AFIP_ENDPOINTS, type Ambiente } from "./config";
 import { AfipError } from "./errors";
-import { asArray, callWsfeSoap } from "./soap";
+import { callWsfeSoap } from "./soap";
 import { CBTE_TIPO_FACTURA_E, type FacturaItem } from "./types";
 
-/** WSFEXv1 usa `ErrCode`/`ErrMsg` en vez de `Code`/`Msg` como WSFEv1. */
-function formatWsfexIssues(
-  issues: Array<{ ErrCode?: string | number; ErrMsg?: string }>
-): string {
-  return issues.map((i) => `[${i.ErrCode ?? "?"}] ${i.ErrMsg ?? "sin detalle"}`).join(" | ");
+/** WSFEXv1 devuelve un único bloque `<FEXErr><ErrCode>N</ErrCode><ErrMsg>...</ErrMsg></FEXErr>`
+ * (ErrCode 0 = sin error). No es un array como en WSFEv1. */
+function throwIfFexErr(result: Record<string, unknown> | undefined, ctx: string): void {
+  const fexErr = result?.FEXErr as { ErrCode?: unknown; ErrMsg?: unknown } | undefined;
+  if (!fexErr) return;
+  const code = Number(fexErr.ErrCode ?? 0);
+  if (code === 0) return;
+  const msg = String(fexErr.ErrMsg ?? "sin detalle");
+  throw new AfipError(`AFIP (WSFEXv1) rechazó ${ctx}: [${code}] ${msg}`);
 }
 
 const WSFEX_NAMESPACE = "http://ar.gov.afip.dif.fexv1/";
@@ -76,15 +80,7 @@ async function getUltimoIdOperacion(params: { ambiente: Ambiente; auth: AuthPara
   const result = (responseBody as Record<string, Record<string, unknown>>)
     .FEXGetLast_IDResponse?.FEXGetLast_IDResult as Record<string, unknown>;
 
-  const errors = asArray(
-    (result?.FEXErr as Record<string, unknown>)?.ErrCode as
-      | { ErrCode?: string; ErrMsg?: string }
-      | { ErrCode?: string; ErrMsg?: string }[]
-      | undefined
-  );
-  if (errors.length > 0) {
-    throw new AfipError(`AFIP rechazó FEXGetLast_ID: ${formatWsfexIssues(errors)}`);
-  }
+  throwIfFexErr(result, "FEXGetLast_ID");
 
   return Number((result?.FEX_event as Record<string, unknown>)?.Id ?? result?.Id ?? 0);
 }
@@ -118,17 +114,7 @@ export async function getProximoNumeroComprobanteE(params: {
   const result = (responseBody as Record<string, Record<string, unknown>>)
     .FEXGetLast_CMPResponse?.FEXGetLast_CMPResult as Record<string, unknown>;
 
-  const errors = asArray(
-    (result?.FEXErr as Record<string, unknown>)?.ErrCode as
-      | { ErrCode?: string; ErrMsg?: string }
-      | { ErrCode?: string; ErrMsg?: string }[]
-      | undefined
-  );
-  if (errors.length > 0) {
-    throw new AfipError(
-      `AFIP rechazó la consulta del último comprobante E: ${formatWsfexIssues(errors)}`
-    );
-  }
+  throwIfFexErr(result, "la consulta del último comprobante E");
 
   const cbteNro = Number(
     (result?.FEXResult_LastCMP as Record<string, unknown>)?.Cbte_nro ?? 0
@@ -236,34 +222,24 @@ export async function solicitarCaeE(params: {
   const result = (responseBody as Record<string, Record<string, unknown>>).FEXAuthorizeResponse
     ?.FEXAuthorizeResult as Record<string, unknown>;
 
-  const topLevelErrors = asArray(
-    (result?.FEXErr as Record<string, unknown>)?.ErrCode as
-      | { ErrCode?: string; ErrMsg?: string }
-      | { ErrCode?: string; ErrMsg?: string }[]
-      | undefined
-  );
-  if (topLevelErrors.length > 0) {
-    throw new AfipError(
-      `AFIP rechazó la Factura E: ${formatWsfexIssues(topLevelErrors)}`
-    );
-  }
+  throwIfFexErr(result, "la Factura E");
 
   const auth_ = result?.FEXResultAuth as Record<string, unknown> | undefined;
   if (!auth_) {
     throw new AfipError("AFIP no devolvió el detalle de autorización de la Factura E.");
   }
 
-  const observaciones = asArray(
-    (auth_.Motivos_Obs as Record<string, unknown>)?.Motivo_Obs as
-      | { Motivo_Obs_Cod?: string; Motivo_Obs_Msg?: string }
-      | { Motivo_Obs_Cod?: string; Motivo_Obs_Msg?: string }[]
-      | undefined
-  ).map(
-    (o) =>
-      `[${(o as { Motivo_Obs_Cod?: string }).Motivo_Obs_Cod ?? "?"}] ${
-        (o as { Motivo_Obs_Msg?: string }).Motivo_Obs_Msg ?? "sin detalle"
-      }`
-  );
+  const motivosObs = auth_.Motivos_Obs as
+    | { Motivo_Obs_Cod?: unknown; Motivo_Obs_Msg?: unknown }
+    | Array<{ Motivo_Obs_Cod?: unknown; Motivo_Obs_Msg?: unknown }>
+    | undefined;
+  const observacionesArray = Array.isArray(motivosObs) ? motivosObs : motivosObs ? [motivosObs] : [];
+  const observaciones = observacionesArray
+    .filter((o) => o && (o.Motivo_Obs_Cod || o.Motivo_Obs_Msg))
+    .map(
+      (o) =>
+        `[${o.Motivo_Obs_Cod ?? "?"}] ${o.Motivo_Obs_Msg ?? "sin detalle"}`
+    );
 
   if (auth_.Resultado !== "A") {
     throw new AfipError(
