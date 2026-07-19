@@ -29,11 +29,19 @@ const PUBLIC_PATHS_EXACT = ["/"];
  * - `connect-src` incluye Supabase y (opcionalmente) el origin de Capacitor
  *   para que fetch/websocket funcionen dentro del WebView.
  */
-function applySecurityHeaders(response: NextResponse) {
+// /api/facturas/[id]/pdf se embebe a propósito en un <iframe> propio
+// (FacturaDetalle → "Ver PDF"), mismo origen. DENY/'none' rompía eso: el
+// navegador se niega a mostrar cualquier respuesta con esos headers
+// dentro de un frame, aunque sea la misma app. Se relaja SOLO acá, a
+// SAMEORIGIN/'self' — nunca a un origen externo.
+const SELF_FRAMEABLE_PATH = /^\/api\/facturas\/[^/]+\/pdf$/;
+
+function applySecurityHeaders(response: NextResponse, path: string) {
   const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
     ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
     : "";
   const capOrigin = process.env.NEXT_PUBLIC_CAPACITOR_ORIGIN ?? "";
+  const allowSelfFraming = SELF_FRAMEABLE_PATH.test(path);
 
   const csp = [
     "default-src 'self'",
@@ -42,14 +50,14 @@ function applySecurityHeaders(response: NextResponse) {
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} ${capOrigin}`.trim(),
-    "frame-ancestors 'none'",
+    `frame-ancestors ${allowSelfFraming ? "'self'" : "'none'"}`,
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
   ].join("; ");
 
   response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Frame-Options", allowSelfFraming ? "SAMEORIGIN" : "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(
@@ -100,8 +108,8 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    return applySecurityHeaders(NextResponse.redirect(loginUrl));
+    return applySecurityHeaders(NextResponse.redirect(loginUrl), path);
   }
 
-  return applySecurityHeaders(response);
+  return applySecurityHeaders(response, path);
 }
