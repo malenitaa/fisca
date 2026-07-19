@@ -3,6 +3,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { markUnlocked, isUnlockEnabled } from "@/lib/unlock";
+import {
+  authenticateWithPasskey,
+  isPasskeySupported,
+  userHasPasskey,
+} from "@/lib/passkey-client";
 
 type Step = "biometric" | "pin" | "recover" | "recovered";
 
@@ -29,8 +34,21 @@ export default function DesbloquearPage() {
   }, []);
 
   async function tryBiometric() {
-    // TODO: integrar WebAuthn/Passkey. Por ahora saltamos al PIN.
-    // Cuando integremos, acá va navigator.credentials.get(...) con 3 intentos.
+    if (!isPasskeySupported()) {
+      setStep("pin");
+      return;
+    }
+    const has = await userHasPasskey();
+    if (!has) {
+      setStep("pin");
+      return;
+    }
+    const ok = await authenticateWithPasskey();
+    if (ok) {
+      markUnlocked();
+      router.replace(next);
+      return;
+    }
     setStep("pin");
   }
 
