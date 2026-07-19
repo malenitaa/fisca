@@ -3,10 +3,6 @@
 import { useState } from "react";
 import { AnularFacturaButton } from "@/components/anular-factura-button";
 
-interface CapacitorGlobal {
-  isNativePlatform?: () => boolean;
-}
-
 interface Props {
   titulo: string;
   numero: string;
@@ -31,50 +27,12 @@ export function FacturaDetalle({
   puedeAnular,
 }: Props) {
   const [sharing, setSharing] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [viendoPdf, setViendoPdf] = useState(false);
 
   async function fetchPdfBlob(): Promise<Blob> {
     const res = await fetch(`/api/facturas/${facturaId}/pdf`);
     if (!res.ok) throw new Error("No se pudo obtener el PDF.");
     return res.blob();
-  }
-
-  /** Descarga in-app: en Capacitor abrimos el share sheet nativo con el
-   * archivo (permite "Save to Files", "Enviar por AirDrop", etc.); en
-   * browser común, guardamos vía <a download> con blob URL. Nunca abrimos
-   * SFSafariViewController porque su cookie jar es distinto y pide login. */
-  async function descargar(e: React.MouseEvent<HTMLAnchorElement>) {
-    e.preventDefault();
-    setDownloading(true);
-    try {
-      const blob = await fetchPdfBlob();
-      const filename = `factura-${numero}.pdf`;
-      const file = new File([blob], filename, { type: "application/pdf" });
-
-      const nav = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-      };
-      const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
-      const isNative = cap?.isNativePlatform?.() ?? false;
-
-      if (isNative && nav.share && nav.canShare?.({ files: [file] })) {
-        // iOS share sheet: incluye "Guardar en archivos" como opción.
-        await nav.share({ files: [file], title: filename });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch {
-      // Cancelado o error — no-op.
-    } finally {
-      setDownloading(false);
-    }
   }
 
   async function compartir() {
@@ -144,21 +102,49 @@ export function FacturaDetalle({
           disabled={sharing}
           className="rounded-xl bg-[#003366] px-4 py-3.5 text-[15px] font-semibold text-white hover:bg-[#002855] disabled:opacity-50 dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
         >
-          {sharing ? "Compartiendo..." : "Compartir por WhatsApp"}
+          {sharing ? "Compartiendo..." : "Compartir"}
         </button>
-        <a
-          href={`/api/facturas/${facturaId}/pdf`}
-          onClick={descargar}
+        <button
+          type="button"
+          onClick={() => setViendoPdf(true)}
           className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
         >
-          {downloading ? "Descargando..." : "Descargar PDF"}
-        </a>
+          Ver PDF
+        </button>
         {puedeAnular && (
           <div className="mt-4 border-t border-neutral-200 pt-4 text-center dark:border-neutral-800">
             <AnularFacturaButton facturaId={facturaId} numero={numero} />
           </div>
         )}
       </div>
+
+      {viendoPdf && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-neutral-950"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
+        >
+          <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+            <button
+              type="button"
+              onClick={() => setViendoPdf(false)}
+              className="text-sm font-semibold text-[#003366] dark:text-[#7bb0e0]"
+            >
+              ‹ Volver
+            </button>
+            <span className="truncate text-sm text-neutral-500 dark:text-neutral-400">
+              {titulo} {numero}
+            </span>
+          </div>
+          <iframe
+            src={`/api/facturas/${facturaId}/pdf`}
+            title={`${titulo} ${numero}`}
+            className="w-full flex-1 border-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
