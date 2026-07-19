@@ -30,7 +30,7 @@ export function NuevaFacturaEForm() {
   const [clienteIdImpositivo, setClienteIdImpositivo] = useState("");
   const [monedaId, setMonedaId] = useState<string>("DOL");
   const [monedaCotizacion, setMonedaCotizacion] = useState("");
-  const [tipoExpo, setTipoExpo] = useState<number>(1);
+  const [tipoExpo, setTipoExpo] = useState<number>(2);
   const [idiomaCbte, setIdiomaCbte] = useState<number>(1);
   const [items, setItems] = useState<ItemRow[]>([{ ...emptyItem }]);
 

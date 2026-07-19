@@ -22,10 +22,11 @@ export const MONEDAS = [
 
 export type MonedaId = (typeof MONEDAS)[number]["value"];
 
-/** Tipo de exportación (WSFEXv1 `Tipo_expo`). */
+/** Tipo de exportación (WSFEXv1 `Tipo_expo`). Los valores son de AFIP:
+ * 1 = mercadería (requiere Incoterms), 2 = servicios (típico Deel), 4 = otros. */
 export const TIPO_EXPO = [
-  { value: 1, label: "Exportación de servicios" },
-  { value: 2, label: "Exportación de bienes" },
+  { value: 2, label: "Exportación de servicios" },
+  { value: 1, label: "Exportación de bienes" },
   { value: 4, label: "Otros" },
 ] as const;
 

@@ -197,7 +197,7 @@ export async function solicitarCaeE(params: {
       <ar:Punto_vta>${puntoVenta}</ar:Punto_vta>
       <ar:Cbte_nro>${numeroComprobante}</ar:Cbte_nro>
       <ar:Tipo_expo>${factura.tipoExpo}</ar:Tipo_expo>
-      <ar:Permiso_existente>${factura.tipoExpo === 1 ? "N" : "S"}</ar:Permiso_existente>
+      <ar:Permiso_existente>${factura.tipoExpo === 2 ? "N" : "S"}</ar:Permiso_existente>
       <ar:Dst_cmp>${factura.clientePais}</ar:Dst_cmp>
       <ar:Cliente>${xmlEscape(factura.clienteNombre)}</ar:Cliente>
       <ar:Cuit_pais_cliente>${factura.clienteCuitPais}</ar:Cuit_pais_cliente>
