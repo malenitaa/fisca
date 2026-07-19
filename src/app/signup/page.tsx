@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { LogoBolt } from "@/components/logo";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function SignupPage() {
   if (status === "error") {
     return (
       <main
-        className="flex h-dvh flex-col items-center justify-center bg-[#003366] px-6 text-center text-white"
+        className="fixed inset-0 h-dvh flex flex-col items-center justify-center bg-[#003366] px-6 text-center text-white"
         style={{
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
@@ -54,23 +55,21 @@ export default function SignupPage() {
 
   return (
     <main
-      className="flex h-dvh flex-col items-center justify-center bg-[#003366] text-white"
+      className="fixed inset-0 h-dvh flex flex-col items-center justify-center bg-[#003366] text-white"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <svg viewBox="0 0 512 512" className="mb-4 h-16 w-16" aria-hidden>
-        <rect width="512" height="512" rx="115" fill="#003366" />
-        <path
-          d="M292 96 L172 300 H248 L226 416 L346 212 H270 Z"
-          fill="#ffffff"
-          stroke="#ffffff"
-          strokeWidth="26"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p className="text-sm text-[#7bb0e0]">Preparando tu cuenta…</p>
+      <div style={{ animation: "fisca-splash-in .7s cubic-bezier(.2,.8,.2,1) both" }}>
+        <LogoBolt className="mb-4 h-16 w-16" pulse />
+      </div>
+      <p
+        className="text-sm text-[#7bb0e0]"
+        style={{ animation: "fisca-splash-in .7s .15s cubic-bezier(.2,.8,.2,1) both" }}
+      >
+        Preparando tu cuenta…
+      </p>
     </main>
   );
 }
