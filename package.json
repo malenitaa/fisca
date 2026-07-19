@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.5",
     "fast-xml-parser": "^5.10.0",

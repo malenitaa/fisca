@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { markUnlocked, setUnlockEnabled } from "@/lib/unlock";
+import { isPasskeySupported, registerPasskey } from "@/lib/passkey-client";
 
-type Step = "email" | "pin" | "confirm" | "sent";
+type Step = "email" | "pin" | "confirm" | "faceid" | "sent";
 
 export default function VincularPage() {
   const router = useRouter();
@@ -58,6 +59,23 @@ export default function VincularPage() {
     }
     setUnlockEnabled(true);
     markUnlocked();
+    if (isPasskeySupported()) {
+      setStep("faceid");
+    } else {
+      setStep("sent");
+    }
+  }
+
+  async function enrollFaceId() {
+    setError("");
+    setSubmitting(true);
+    try {
+      await registerPasskey();
+    } catch (err) {
+      // Si el user cancela o el WebView no soporta, seguimos con PIN nomás.
+      setError(err instanceof Error ? err.message : "No se pudo activar Face ID.");
+    }
+    setSubmitting(false);
     setStep("sent");
   }
 
@@ -176,6 +194,41 @@ export default function VincularPage() {
                 {submitting ? "Guardando..." : "Vincular"}
               </button>
             </form>
+          )}
+
+          {step === "faceid" && (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#003366] text-white dark:bg-[#4a90c8]">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4" />
+                  <path d="M8 9v1M16 9v1M8 15c1.333 1 2.667 1.5 4 1.5s2.667-.5 4-1.5" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  ¿Activar Face ID?
+                </h1>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Entrás sin escribir el PIN. El PIN queda de respaldo.
+                </p>
+              </div>
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              <button
+                type="button"
+                onClick={enrollFaceId}
+                disabled={submitting}
+                className="w-full rounded-xl bg-[#003366] px-3 py-3 text-[15px] font-semibold text-white disabled:opacity-40 dark:bg-[#4a90c8]"
+              >
+                {submitting ? "Activando..." : "Activar Face ID"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("sent")}
+                className="block w-full text-center text-sm font-medium text-neutral-500 dark:text-neutral-400"
+              >
+                Ahora no
+              </button>
+            </div>
           )}
 
           {step === "sent" && (
