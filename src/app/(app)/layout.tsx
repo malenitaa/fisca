@@ -13,8 +13,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <main className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 sm:pt-8">
+    <div className="min-h-svh">
+      <main
+        className="mx-auto w-full max-w-2xl px-4 pt-4 sm:pt-8"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+      >
         {children}
       </main>
       <BottomTabs />
