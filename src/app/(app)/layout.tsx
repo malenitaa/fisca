@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-neutral-200 dark:border-neutral-800">
-        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-y-1 px-4 py-2 sm:py-3">
           <nav className="order-2 flex w-full gap-4 overflow-x-auto text-sm sm:order-1 sm:w-auto">
             <Link href="/facturas" className="whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
               <span className="sm:hidden">Facturar</span>
@@ -49,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-4 sm:py-8">{children}</main>
     </div>
   );
 }
