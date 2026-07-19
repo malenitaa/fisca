@@ -74,8 +74,13 @@ export function BottomTabs() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="shrink-0 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom)",
+        // Forzar compositing layer para que iOS no haga jitter al scrollear
+        willChange: "transform",
+        transform: "translateZ(0)",
+      }}
     >
       <div className="mx-auto flex max-w-2xl">
         {TABS.map((tab) => {

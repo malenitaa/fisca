@@ -182,7 +182,7 @@ export function NuevaFacturaEForm() {
   const monedaFull = MONEDAS.find((m) => m.value === monedaId) ?? MONEDAS[0];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5 pb-32">
       {/* CLIENTE DEL EXTERIOR */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -190,14 +190,12 @@ export function NuevaFacturaEForm() {
         </h3>
         <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
           <div className="px-4 py-3 text-sm">
-            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-              Nombre / Razón social
-            </span>
             <input
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
               autoCapitalize="words"
-              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+              placeholder="Nombre / Razón social"
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
             />
             {fieldErrors["clienteNombre"] && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -225,14 +223,12 @@ export function NuevaFacturaEForm() {
             </div>
           </label>
           <div className="px-4 py-3 text-sm">
-            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-              Domicilio
-            </span>
             <input
               value={clienteDomicilio}
               onChange={(e) => setClienteDomicilio(e.target.value)}
               autoCapitalize="words"
-              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+              placeholder="Domicilio"
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
             />
             {fieldErrors["clienteDomicilio"] && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -241,13 +237,11 @@ export function NuevaFacturaEForm() {
             )}
           </div>
           <div className="px-4 py-3 text-sm">
-            <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-              ID fiscal extranjero (opcional)
-            </span>
             <input
               value={clienteIdImpositivo}
               onChange={(e) => setClienteIdImpositivo(e.target.value)}
-              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+              placeholder="ID fiscal extranjero (opcional)"
+              className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
             />
           </div>
         </div>
@@ -447,30 +441,39 @@ export function NuevaFacturaEForm() {
         </p>
       )}
 
-      {/* Sticky abajo, justo arriba del tab bar */}
-      <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
-        <div className="mb-1 flex items-baseline justify-between">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
-          <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-            {moneda.symbol}
-            {total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        {totalArs > 0 && (
-          <div className="mb-2 flex items-baseline justify-between text-xs text-neutral-500 dark:text-neutral-400">
-            <span>En pesos</span>
-            <span className="tabular-nums">
-              ${totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+      {/* Fixed arriba del tab bar */}
+      <div
+        className="fixed inset-x-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom) + 3.5rem)",
+          willChange: "transform",
+          transform: "translateZ(0)",
+        }}
+      >
+        <div className="mx-auto max-w-2xl px-4 py-3">
+          <div className="mb-1 flex items-baseline justify-between">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
+            <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+              {moneda.symbol}
+              {total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </span>
           </div>
-        )}
-        <button
-          type="submit"
-          disabled={status === "submitting"}
-          className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
-        >
-          {status === "submitting" ? "Emitiendo..." : "Emitir factura E"}
-        </button>
+          {totalArs > 0 && (
+            <div className="mb-2 flex items-baseline justify-between text-xs text-neutral-500 dark:text-neutral-400">
+              <span>En pesos</span>
+              <span className="tabular-nums">
+                ${totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={status === "submitting"}
+            className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+          >
+            {status === "submitting" ? "Emitiendo..." : "Emitir factura E"}
+          </button>
+        </div>
       </div>
     </form>
   );

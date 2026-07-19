@@ -170,7 +170,7 @@ export function NuevaFacturaForm() {
   const clienteEsCF = docTipo === 99;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5 pb-32">
       {/* CLIENTE */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -271,15 +271,30 @@ export function NuevaFacturaForm() {
 
           {!clienteEsCF && (
             <>
-              <div className="grid grid-cols-2 gap-3 px-4 py-3 text-sm">
-                <div>
-                  <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-                    Tipo doc
+              <label className="flex items-center justify-between px-4 py-3 text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  {docTipo === 80 ? "CUIT" : "DNI"}
+                </span>
+                <input
+                  value={docNro}
+                  onChange={(e) => setDocNro(e.target.value)}
+                  inputMode="numeric"
+                  placeholder={docTipo === 80 ? "CUIT" : "DNI"}
+                  className="w-1/2 border-0 bg-transparent p-0 text-right text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+                />
+              </label>
+              <label className="flex items-center justify-between px-4 py-3 text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400">Tipo</span>
+                <div className="relative flex items-center">
+                  <span className="pr-1 text-neutral-900 dark:text-neutral-100">
+                    {docTipo === 80 ? "CUIT" : "DNI"}
                   </span>
+                  <span className="text-neutral-400">›</span>
                   <select
                     value={docTipo}
                     onChange={(e) => setDocTipo(Number(e.target.value))}
-                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label="Tipo de documento"
                   >
                     {DOC_TIPOS.filter((d) => d.value !== 99).map((d) => (
                       <option key={d.value} value={d.value}>
@@ -288,33 +303,19 @@ export function NuevaFacturaForm() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-                    N° documento
-                  </span>
-                  <input
-                    value={docNro}
-                    onChange={(e) => setDocNro(e.target.value)}
-                    inputMode="numeric"
-                    placeholder=""
-                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
-                  />
-                </div>
-              </div>
+              </label>
               {fieldErrors["docNro"] && (
                 <p className="px-4 pb-2 text-sm text-red-600 dark:text-red-400">
                   {fieldErrors["docNro"]}
                 </p>
               )}
               <div className="px-4 py-3 text-sm">
-                <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
-                  Nombre (opcional)
-                </span>
                 <input
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
                   autoCapitalize="words"
-                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
+                  placeholder="Nombre / Razón social"
+                  className="w-full border-0 bg-transparent p-0 text-base text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
                 />
               </div>
             </>
@@ -445,21 +446,30 @@ export function NuevaFacturaForm() {
         </p>
       )}
 
-      {/* Sticky abajo, justo arriba del tab bar */}
-      <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
-        <div className="mb-2 flex items-baseline justify-between">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
-          <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-            ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-          </span>
+      {/* Fixed arriba del tab bar */}
+      <div
+        className="fixed inset-x-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom) + 3.5rem)",
+          willChange: "transform",
+          transform: "translateZ(0)",
+        }}
+      >
+        <div className="mx-auto max-w-2xl px-4 py-3">
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
+            <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+              ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <button
+            type="submit"
+            disabled={status === "submitting"}
+            className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+          >
+            {status === "submitting" ? "Emitiendo..." : "Emitir factura C"}
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={status === "submitting"}
-          className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
-        >
-          {status === "submitting" ? "Emitiendo..." : "Emitir factura C"}
-        </button>
       </div>
     </form>
   );

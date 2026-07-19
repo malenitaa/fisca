@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   CBTE_TIPO_FACTURA_E,
@@ -7,7 +8,6 @@ import {
   CBTE_TIPO_NOTA_CREDITO_E,
   MONEDAS,
 } from "@/lib/afip/types";
-import { AnularFacturaButton } from "@/components/anular-factura-button";
 
 interface Invoice {
   id: string;
@@ -218,9 +218,10 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
               ? `${inv.cliente_nombre}${inv.cliente_doc_tipo === 96 ? " · DNI" : ""}`
               : inv.cliente_doc_nro ?? "Cliente";
             return (
-              <div
+              <Link
                 key={inv.id}
-                className={`flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950 ${
+                href={`/facturas/${inv.id}`}
+                className={`flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-[#003366]/40 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-[#7bb0e0]/40 ${
                   estaAnulada ? "opacity-60" : ""
                 }`}
               >
@@ -252,34 +253,20 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                       minimumFractionDigits: 2,
                     })}
                   </span>
-                  <a
-                    href={`/api/facturas/${inv.id}/pdf`}
-                    download
-                    aria-label="Descargar PDF"
-                    className="text-neutral-400 hover:text-[#003366] dark:hover:text-[#7bb0e0]"
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-neutral-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
                   >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
-                    </svg>
-                  </a>
-                  {!esNotaCredito && !esE && !estaAnulada && (
-                    <AnularFacturaButton
-                      facturaId={inv.id}
-                      numero={`${String(inv.punto_venta).padStart(5, "0")}-${String(
-                        inv.numero_comprobante
-                      ).padStart(8, "0")}`}
-                    />
-                  )}
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
