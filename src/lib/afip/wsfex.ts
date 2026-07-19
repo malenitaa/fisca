@@ -95,12 +95,16 @@ export async function getProximoNumeroComprobanteE(params: {
 }): Promise<number> {
   const { ambiente, auth, puntoVenta, cbteTipo = CBTE_TIPO_FACTURA_E } = params;
 
+  // FEXGetLast_CMP mete Pto_venta y Cbte_Tipo DENTRO del bloque <Auth>
+  // (tipo ClsFEX_LastCMP en el WSDL, no ClsFEXAuthRequest).
   const body = `<ar:FEXGetLast_CMP>
-    ${authBlock(auth)}
-    <ar:Auth_param_Last_CMP>
+    <ar:Auth>
+      <ar:Token>${auth.token}</ar:Token>
+      <ar:Sign>${auth.sign}</ar:Sign>
+      <ar:Cuit>${auth.cuit}</ar:Cuit>
       <ar:Pto_venta>${puntoVenta}</ar:Pto_venta>
       <ar:Cbte_Tipo>${cbteTipo}</ar:Cbte_Tipo>
-    </ar:Auth_param_Last_CMP>
+    </ar:Auth>
   </ar:FEXGetLast_CMP>`;
 
   const responseBody = await callWsfeSoap({

@@ -89,6 +89,9 @@ export function NuevaFacturaForm() {
     setErrorMessage("");
     setFieldErrors({});
 
+    const capitalize = (s: string) =>
+      s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
     const payload = {
       concepto,
       docTipo,
@@ -96,7 +99,7 @@ export function NuevaFacturaForm() {
       clienteNombre: clienteNombre || undefined,
       condicionIvaReceptorId: condicionIva,
       items: items.map((it) => ({
-        descripcion: it.descripcion,
+        descripcion: capitalize(it.descripcion.trim()),
         cantidad: it.cantidad,
         precioUnitario: it.precioUnitario,
       })),
