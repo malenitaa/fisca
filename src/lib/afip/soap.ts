@@ -1,3 +1,4 @@
+import { request as httpsRequest, Agent as HttpsAgent } from "node:https";
 import { XMLParser } from "fast-xml-parser";
 import { AfipError } from "./errors";
 
@@ -6,6 +7,61 @@ const parser = new XMLParser({
   ignoreAttributes: true,
   parseTagValue: false,
 });
+
+/**
+ * servicios1.afip.gov.ar (WSFEv1/WSFEXv1 de PRODUCCIÓN — no homologación,
+ * no WSAA) todavía negocia TLS con un primo Diffie-Hellman demasiado
+ * chico para el nivel de seguridad default de OpenSSL 3 ("dh key too
+ * small"). Es un problema de la infraestructura de ARCA, reportado por
+ * muchas integraciones (facturajs, pyafipws, python-zeep), no algo que
+ * podamos arreglar de su lado. Ver README § "TLS legacy de AFIP".
+ *
+ * El fix baja el SECLEVEL de OpenSSL de 2 a 1 (sigue exigiendo TLS 1.2+ y
+ * cifrado fuerte, solo permite primos DH más chicos) pero SOLO para
+ * conexiones a este host puntual, via un https.Agent de Node dedicado —
+ * todo lo demás (Supabase, WSAA, homologación) sigue usando `fetch` con
+ * la configuración default de Node/OpenSSL sin tocar.
+ *
+ * No se puede lograr lo mismo pasándole un `dispatcher` de undici a
+ * `fetch`: el undici interno de Node y el paquete `undici` de npm no son
+ * intercambiables (rompe con "invalid onRequestStart method"), así que
+ * para este host puntual hacemos el POST con `node:https` en vez de
+ * `fetch`.
+ */
+const LEGACY_TLS_HOSTS = new Set(["servicios1.afip.gov.ar"]);
+
+let legacyAgent: HttpsAgent | undefined;
+function legacyTlsAgentFor(endpoint: string): HttpsAgent | undefined {
+  if (!LEGACY_TLS_HOSTS.has(new URL(endpoint).hostname)) return undefined;
+  legacyAgent ??= new HttpsAgent({ ciphers: "DEFAULT@SECLEVEL=1" });
+  return legacyAgent;
+}
+
+/** POST vía `node:https` con un Agent puntual, devuelto como `Response`
+ * estándar para que el resto de `callWsfeSoap` no tenga que distinguir
+ * de dónde vino. */
+function postWithAgent(
+  endpoint: string,
+  headers: Record<string, string>,
+  body: string,
+  agent: HttpsAgent
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest(
+      endpoint,
+      { method: "POST", agent, headers: { ...headers, "Content-Length": Buffer.byteLength(body) } },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => resolve(new Response(Buffer.concat(chunks), { status: res.statusCode ?? 0 })));
+        res.on("error", reject);
+      }
+    );
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 export async function callWsfeSoap(params: {
   endpoint: string;
@@ -28,16 +84,17 @@ export async function callWsfeSoap(params: {
   </soapenv:Body>
 </soapenv:Envelope>`;
 
+  const headers = {
+    "Content-Type": "text/xml; charset=utf-8",
+    SOAPAction: params.soapAction,
+  };
+
   let response: Response;
   try {
-    response = await fetch(params.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/xml; charset=utf-8",
-        SOAPAction: params.soapAction,
-      },
-      body: envelope,
-    });
+    const legacyAgentForEndpoint = legacyTlsAgentFor(params.endpoint);
+    response = legacyAgentForEndpoint
+      ? await postWithAgent(params.endpoint, headers, envelope, legacyAgentForEndpoint)
+      : await fetch(params.endpoint, { method: "POST", headers, body: envelope });
   } catch (err) {
     throw new AfipError(
       `No se pudo contactar al servicio de facturación de AFIP (${svcName}). ${
