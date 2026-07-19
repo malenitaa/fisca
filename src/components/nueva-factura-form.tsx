@@ -170,13 +170,13 @@ export function NuevaFacturaForm() {
   const clienteEsCF = docTipo === 99;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 pb-32">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* CLIENTE */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Cliente
         </h3>
-        <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="mb-3 flex flex-wrap gap-2">
           {/* Consumidor Final default siempre primero */}
           <button
             type="button"
@@ -296,7 +296,7 @@ export function NuevaFacturaForm() {
                     value={docNro}
                     onChange={(e) => setDocNro(e.target.value)}
                     inputMode="numeric"
-                    placeholder={docTipo === 80 ? "20111111112" : "12345678"}
+                    placeholder=""
                     className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
                   />
                 </div>
@@ -381,7 +381,7 @@ export function NuevaFacturaForm() {
                   <input
                     value={item.descripcion}
                     onChange={(e) => updateItem(index, { descripcion: e.target.value })}
-                    placeholder="Descripción"
+                    placeholder=""
                     autoCapitalize="sentences"
                     spellCheck
                     className="flex-1 border-0 bg-transparent p-0 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
@@ -398,7 +398,7 @@ export function NuevaFacturaForm() {
                     min={0}
                     step="any"
                     inputMode="decimal"
-                    placeholder="1"
+                    placeholder=""
                     className="w-12 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
                   />
                   <span>×</span>
@@ -409,7 +409,7 @@ export function NuevaFacturaForm() {
                     min={0}
                     step="any"
                     inputMode="decimal"
-                    placeholder="0"
+                    placeholder=""
                     className="flex-1 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
                   />
                   {items.length > 1 && (
@@ -445,17 +445,18 @@ export function NuevaFacturaForm() {
         </p>
       )}
 
-      <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
-        <div className="mb-4 flex items-center justify-between">
+      {/* Sticky abajo, justo arriba del tab bar */}
+      <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="mb-2 flex items-baseline justify-between">
           <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
-          <span className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
             ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
           </span>
         </div>
         <button
           type="submit"
           disabled={status === "submitting"}
-          className="w-full rounded-lg bg-[#003366] px-3 py-3 text-base font-medium text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+          className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
         >
           {status === "submitting" ? "Emitiendo..." : "Emitir factura C"}
         </button>

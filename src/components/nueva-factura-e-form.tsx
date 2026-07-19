@@ -186,7 +186,7 @@ export function NuevaFacturaEForm() {
         <input
           value={clienteNombre}
           onChange={(e) => setClienteNombre(e.target.value)}
-          placeholder="Ej: Deel Inc."
+          placeholder=""
           className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
         {fieldErrors["clienteNombre"] && (
@@ -218,7 +218,7 @@ export function NuevaFacturaEForm() {
           <input
             value={clienteIdImpositivo}
             onChange={(e) => setClienteIdImpositivo(e.target.value)}
-            placeholder="TIN, VAT, EIN..."
+            placeholder=""
             className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
           />
         </div>
@@ -231,7 +231,7 @@ export function NuevaFacturaEForm() {
         <input
           value={clienteDomicilio}
           onChange={(e) => setClienteDomicilio(e.target.value)}
-          placeholder="Calle, ciudad, estado"
+          placeholder=""
           autoCapitalize="words"
           className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
@@ -270,7 +270,7 @@ export function NuevaFacturaEForm() {
               type="number"
               min={0}
               step="any"
-              placeholder="Ej: 1350.6490"
+              placeholder=""
               className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
             />
             <button
@@ -367,7 +367,7 @@ export function NuevaFacturaEForm() {
               <input
                 value={item.descripcion}
                 onChange={(e) => updateItem(index, { descripcion: e.target.value })}
-                placeholder="Descripción del servicio"
+                placeholder=""
                 autoCapitalize="sentences"
                 spellCheck
                 className="col-span-6 rounded-md border border-neutral-300 px-3 py-2 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
@@ -378,7 +378,7 @@ export function NuevaFacturaEForm() {
                 type="number"
                 min={0}
                 step="any"
-                placeholder="Cant."
+                placeholder=""
                 className="col-span-2 rounded-md border border-neutral-300 px-2 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
               />
               <input
@@ -387,7 +387,7 @@ export function NuevaFacturaEForm() {
                 type="number"
                 min={0}
                 step="any"
-                placeholder={`Precio ${moneda.symbol}`}
+                placeholder=""
                 className="col-span-3 rounded-md border border-neutral-300 px-2 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
               />
               <button
@@ -413,42 +413,37 @@ export function NuevaFacturaEForm() {
         </button>
       </div>
 
-      <div className="space-y-1 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            Total en {moneda.symbol}
-          </span>
-          <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            {moneda.symbol}
-            {total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        {totalArs > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              Equivalente en pesos (informativo)
-            </span>
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              $
-              {totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-            </span>
-          </div>
-        )}
-      </div>
-
       {status === "error" && errorMessage && (
         <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
           {errorMessage}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={status === "submitting"}
-        className="w-full rounded-md bg-[#003366] px-3 py-2.5 font-medium text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
-      >
-        {status === "submitting" ? "Emitiendo..." : "Emitir Factura E"}
-      </button>
+      {/* Sticky abajo, justo arriba del tab bar */}
+      <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="mb-1 flex items-baseline justify-between">
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
+          <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+            {moneda.symbol}
+            {total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+        {totalArs > 0 && (
+          <div className="mb-2 flex items-baseline justify-between text-xs text-neutral-500 dark:text-neutral-400">
+            <span>En pesos</span>
+            <span className="tabular-nums">
+              ${totalArs.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={status === "submitting"}
+          className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+        >
+          {status === "submitting" ? "Emitiendo..." : "Emitir factura E"}
+        </button>
+      </div>
     </form>
   );
 }

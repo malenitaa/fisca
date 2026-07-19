@@ -144,7 +144,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           onChange={(e) => setPeriodo(e.target.value)}
           className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 dark:border-neutral-700 dark:bg-neutral-900"
         >
-          <option value="todos">Todos los meses</option>
+          <option value="todos">Todos</option>
           {periodos.map((p) => (
             <option key={p} value={p}>
               {periodoLabel(p)}
