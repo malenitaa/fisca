@@ -60,6 +60,48 @@ export function importeTotalE(items: FacturaItem[]): number {
   );
 }
 
+/** Consulta la cotización oficial de AFIP para una moneda + fecha dada.
+ * Es la fuente de verdad — dolarapi.com no siempre coincide en decimales
+ * y ARCA rechaza cualquier diferencia. */
+export async function getCotizacionAfip(params: {
+  ambiente: Ambiente;
+  auth: AuthParams;
+  monedaId: string;
+  fecha?: string; // YYYYMMDD; por default el día de hoy
+}): Promise<{ cotizacion: number; fecha: string }> {
+  const { ambiente, auth, monedaId } = params;
+  const fecha = params.fecha ?? todayYYYYMMDD();
+
+  const body = `<ar:FEXGetPARAM_Ctz>
+    ${authBlock(auth)}
+    <ar:Mon_id>${monedaId}</ar:Mon_id>
+    <ar:Fch_cotiz>${fecha}</ar:Fch_cotiz>
+  </ar:FEXGetPARAM_Ctz>`;
+
+  const responseBody = await callWsfeSoap({
+    endpoint: AFIP_ENDPOINTS[ambiente].wsfex,
+    soapAction: `${WSFEX_SOAP_ACTION_PREFIX}FEXGetPARAM_Ctz`,
+    body,
+    namespace: WSFEX_NAMESPACE,
+    serviceName: WSFEX_SERVICE_NAME,
+  });
+
+  const result = (responseBody as Record<string, Record<string, unknown>>)
+    .FEXGetPARAM_CtzResponse?.FEXGetPARAM_CtzResult as Record<string, unknown>;
+
+  throwIfFexErr(result, "la consulta de cotización");
+
+  const inner = result?.FEXResultGet as Record<string, unknown> | undefined;
+  if (!inner || !inner.Mon_ctz) {
+    throw new AfipError(`AFIP no devolvió cotización para ${monedaId} en ${fecha}.`);
+  }
+
+  return {
+    cotizacion: Number(inner.Mon_ctz),
+    fecha: String(inner.Fch_cotiz ?? fecha),
+  };
+}
+
 /** Consulta el ID de la última operación registrada en WSFEXv1 (para armar
  * el próximo). Se pide un `Id` monotónico por CUIT. */
 async function getUltimoIdOperacion(params: { ambiente: Ambiente; auth: AuthParams }): Promise<number> {

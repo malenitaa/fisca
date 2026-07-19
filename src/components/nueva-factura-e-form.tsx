@@ -43,19 +43,13 @@ export function NuevaFacturaEForm() {
   const traerCotizacion = useCallback(async () => {
     setCotizStatus("loading");
     try {
-      // dolarapi.com espeja el TC oficial del BCRA (~ BNA vendedor).
-      // Para USD usamos "oficial"; para otras monedas la app no autofetchea
-      // todavía y el usuario tipea el valor a mano.
-      const endpoint =
-        monedaId === "DOL" ? "https://dolarapi.com/v1/dolares/oficial" : null;
-      if (!endpoint) {
-        setCotizStatus("error");
-        return;
-      }
-      const res = await fetch(endpoint);
-      const body = (await res.json()) as { venta?: number };
-      if (body.venta) {
-        setMonedaCotizacion(String(body.venta));
+      // Consulta directa a AFIP (WSFEXv1 FEXGetPARAM_Ctz) por nuestro
+      // backend. Es la única fuente que ARCA acepta sin rechazar por
+      // diferencia de decimales al emitir Factura E.
+      const res = await fetch(`/api/facturas/e/cotizacion?moneda=${monedaId}`);
+      const body = (await res.json()) as { cotizacion?: number; error?: string };
+      if (body.cotizacion) {
+        setMonedaCotizacion(String(body.cotizacion));
         setCotizStatus("idle");
       } else {
         setCotizStatus("error");
@@ -284,16 +278,14 @@ export function NuevaFacturaEForm() {
               placeholder="Ej: 1350.00"
               className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
             />
-            {monedaId === "DOL" && (
-              <button
-                type="button"
-                onClick={traerCotizacion}
-                disabled={cotizStatus === "loading"}
-                className="shrink-0 rounded-md border border-[#003366] px-3 text-xs font-medium text-[#003366] hover:bg-[#003366]/5 disabled:opacity-50 dark:border-[#7bb0e0] dark:text-[#7bb0e0] dark:hover:bg-[#7bb0e0]/10"
-              >
-                {cotizStatus === "loading" ? "..." : "Traer"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={traerCotizacion}
+              disabled={cotizStatus === "loading"}
+              className="shrink-0 rounded-md border border-[#003366] px-3 text-xs font-medium text-[#003366] hover:bg-[#003366]/5 disabled:opacity-50 dark:border-[#7bb0e0] dark:text-[#7bb0e0] dark:hover:bg-[#7bb0e0]/10"
+            >
+              {cotizStatus === "loading" ? "..." : "Traer"}
+            </button>
           </div>
           {fieldErrors["monedaCotizacion"] && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -308,17 +300,8 @@ export function NuevaFacturaEForm() {
         </div>
       </div>
       <p className="-mt-4 text-xs text-neutral-500 dark:text-neutral-400">
-        &quot;Traer&quot; usa el tipo de cambio oficial (BCRA) — muy cercano al BNA
-        vendedor que exige ARCA. Fuente:{" "}
-        <a
-          href="https://www.bna.com.ar/Personas"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#003366] underline dark:text-[#7bb0e0]"
-        >
-          bna.com.ar
-        </a>{" "}
-        para verificar el valor exacto.
+        &quot;Traer&quot; consulta la cotización oficial que AFIP tiene registrada
+        para hoy — es exactamente la que ARCA acepta al emitir la Factura E.
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
