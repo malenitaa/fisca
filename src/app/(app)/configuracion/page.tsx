@@ -84,14 +84,34 @@ export default async function PerfilPage() {
         <ConfiguracionForm existing={existing} />
       </section>
 
-      {hasPin && (
+      {hasPin ? (
         <section>
           <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Seguridad
           </h2>
           <UnlockToggle />
         </section>
-      )}
+      ) : !isAnonymous ? (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Seguridad
+          </h2>
+          <Link
+            href="/configurar-pin"
+            className="flex items-center justify-between rounded-md border border-neutral-200 px-4 py-3 text-sm text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-900"
+          >
+            <div>
+              <p className="font-medium">Activar bloqueo con PIN o Face ID</p>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                Pide autenticación cada vez que abras la app.
+              </p>
+            </div>
+            <span aria-hidden className="text-neutral-400">
+              ›
+            </span>
+          </Link>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">Más</h2>
