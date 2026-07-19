@@ -15,14 +15,36 @@ export default async function HistorialPage() {
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false });
 
+  const now = new Date();
+  const meses = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ];
+  const mesActual = `${meses[now.getMonth()]} ${now.getFullYear()}`;
+
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Historial
-      </h1>
+      <header className="mb-4 flex items-center justify-between">
+        <h1 className="text-[19px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+          Historial
+        </h1>
+        <span className="rounded-md border border-neutral-200 px-2 py-1 font-mono text-[11px] text-[#003366] dark:border-neutral-800 dark:text-[#7bb0e0]">
+          {mesActual}
+        </span>
+      </header>
 
       {!invoices || invoices.length === 0 ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="py-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
           Todavía no emitiste ninguna factura.
         </p>
       ) : (

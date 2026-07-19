@@ -370,37 +370,27 @@ export function NuevaFacturaForm() {
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Ítems
         </h3>
-        <div className="space-y-2">
+        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
           {items.map((item, index) => {
             const cantN = Number(item.cantidad) || 0;
             const precN = Number(item.precioUnitario) || 0;
             const subtotal = cantN * precN;
             return (
-              <div
-                key={index}
-                className="rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950"
-              >
-                <div className="mb-2 flex items-center gap-2">
+              <div key={index} className="px-4 py-3">
+                <div className="mb-1.5 flex items-center gap-2">
                   <input
                     value={item.descripcion}
                     onChange={(e) => updateItem(index, { descripcion: e.target.value })}
                     placeholder="Descripción"
                     autoCapitalize="sentences"
                     spellCheck
-                    className="flex-1 rounded-md border border-neutral-200 px-3 py-2 text-base outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-[#7bb0e0]"
+                    className="flex-1 border-0 bg-transparent p-0 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
                   />
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeItem(index)}
-                      aria-label="Quitar ítem"
-                      className="p-1 text-neutral-400 hover:text-red-600"
-                    >
-                      ✕
-                    </button>
-                  )}
+                  <span className="min-w-[5rem] text-right text-sm font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">
+                    ${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                   <input
                     value={item.cantidad}
                     onChange={(e) => updateItem(index, { cantidad: e.target.value })}
@@ -408,10 +398,10 @@ export function NuevaFacturaForm() {
                     min={0}
                     step="any"
                     inputMode="decimal"
-                    placeholder="Cant."
-                    className="w-20 rounded-md border border-neutral-200 px-2 py-1.5 text-base outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-[#7bb0e0]"
+                    placeholder="1"
+                    className="w-12 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
                   />
-                  <span className="text-neutral-400">×</span>
+                  <span>×</span>
                   <input
                     value={item.precioUnitario}
                     onChange={(e) => updateItem(index, { precioUnitario: e.target.value })}
@@ -419,27 +409,34 @@ export function NuevaFacturaForm() {
                     min={0}
                     step="any"
                     inputMode="decimal"
-                    placeholder="Precio"
-                    className="flex-1 rounded-md border border-neutral-200 px-2 py-1.5 text-base outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-[#7bb0e0]"
+                    placeholder="0"
+                    className="flex-1 rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700 outline-none focus:border-[#003366] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:focus:border-[#7bb0e0]"
                   />
-                  <span className="min-w-[5rem] text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    ${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </span>
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      aria-label="Quitar ítem"
+                      className="text-neutral-400 hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
+          <button
+            type="button"
+            onClick={addItem}
+            className="w-full px-4 py-3 text-left text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:text-[#7bb0e0] dark:hover:bg-[#7bb0e0]/10"
+          >
+            + Agregar ítem
+          </button>
         </div>
         {fieldErrors["items"] && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors["items"]}</p>
         )}
-        <button
-          type="button"
-          onClick={addItem}
-          className="mt-2 text-sm font-medium text-[#003366] hover:underline dark:text-[#7bb0e0]"
-        >
-          + Agregar ítem
-        </button>
       </section>
 
       {status === "error" && errorMessage && (
