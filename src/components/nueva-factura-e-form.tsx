@@ -237,14 +237,20 @@ export function NuevaFacturaEForm() {
 
       <div>
         <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          Domicilio del cliente (opcional)
+          Domicilio del cliente
         </label>
         <input
           value={clienteDomicilio}
           onChange={(e) => setClienteDomicilio(e.target.value)}
           placeholder="Calle, ciudad, estado"
+          autoCapitalize="words"
           className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
         />
+        {fieldErrors["clienteDomicilio"] && (
+          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {fieldErrors["clienteDomicilio"]}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -274,8 +280,8 @@ export function NuevaFacturaEForm() {
               onChange={(e) => setMonedaCotizacion(e.target.value)}
               type="number"
               min={0}
-              step="0.01"
-              placeholder="Ej: 1350.00"
+              step="any"
+              placeholder="Ej: 1350.6490"
               className="w-full rounded-md border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-100"
             />
             <button
