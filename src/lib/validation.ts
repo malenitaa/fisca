@@ -70,7 +70,8 @@ export const nuevaFacturaESchema = z.object({
   clienteNombre: z.string().trim().min(1, "Falta el nombre del cliente.").max(200),
   clientePais: z.coerce.number().int().min(1),
   clienteCuitPais: z.string().trim().min(1, "Falta el CUIT del país del cliente."),
-  clienteDomicilio: z.string().trim().max(300).optional(),
+  // ARCA exige domicilio_cliente no vacío en WSFEXv1.
+  clienteDomicilio: z.string().trim().min(1, "El domicilio del cliente es obligatorio.").max(300),
   clienteIdImpositivo: z.string().trim().max(50).optional(),
   monedaId: z.string().trim().min(3).max(4),
   monedaCotizacion: z.coerce.number().positive("La cotización debe ser positiva."),
