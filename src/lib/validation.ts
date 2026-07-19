@@ -22,17 +22,22 @@ const itemSchema = z.object({
   precioUnitario: z.coerce.number().positive("El precio tiene que ser mayor a 0."),
 });
 
+const isoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida.")
+  .optional();
+
 export const nuevaFacturaSchema = z
   .object({
     concepto: z.coerce.number().int().refine((v) => [1, 2, 3].includes(v)),
     docTipo: z.coerce.number().int().refine((v) => [80, 96, 99].includes(v)),
-    docNro: z.string().trim(),
+    docNro: z.string().trim().max(50),
     clienteNombre: z.string().trim().max(200).optional(),
     condicionIvaReceptorId: z.coerce.number().int(),
     items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
-    fechaServicioDesde: z.string().optional(),
-    fechaServicioHasta: z.string().optional(),
-    fechaVtoPago: z.string().optional(),
+    fechaServicioDesde: isoDateSchema,
+    fechaServicioHasta: isoDateSchema,
+    fechaVtoPago: isoDateSchema,
   })
   .superRefine((data, ctx) => {
     if (data.docTipo === 99) {
@@ -69,15 +74,25 @@ export type NuevaFacturaFormInput = z.infer<typeof nuevaFacturaSchema>;
 export const nuevaFacturaESchema = z.object({
   clienteNombre: z.string().trim().min(1, "Falta el nombre del cliente.").max(200),
   clientePais: z.coerce.number().int().min(1),
-  clienteCuitPais: z.string().trim().min(1, "Falta el CUIT del país del cliente."),
-  // ARCA exige domicilio_cliente no vacío en WSFEXv1.
+  // Cuit_pais_cliente de AFIP es solo dígitos (ej 50000000059 para Estados Unidos).
+  clienteCuitPais: z
+    .string()
+    .trim()
+    .regex(/^\d{1,15}$/, "El CUIT del país tiene que ser numérico."),
   clienteDomicilio: z.string().trim().min(1, "El domicilio del cliente es obligatorio.").max(300),
   clienteIdImpositivo: z.string().trim().max(50).optional(),
-  monedaId: z.string().trim().min(3).max(4),
+  // Moneda: código AFIP de 3 letras (DOL, PES, EUR, ...) mayúscula.
+  monedaId: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9]{3,4}$/, "Moneda inválida."),
   monedaCotizacion: z.coerce.number().positive("La cotización debe ser positiva."),
   tipoExpo: z.coerce.number().int().refine((v) => [1, 2, 4].includes(v)),
   idiomaCbte: z.coerce.number().int().refine((v) => [1, 2, 3].includes(v)),
-  fechaPago: z.string().optional(),
+  fechaPago: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida.")
+    .optional(),
   items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
 }).superRefine((data, ctx) => {
   // ARCA exige Fecha_pago cuando tipo_expo es servicios (2) u otros (4).

@@ -7,16 +7,17 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getRpConfig } from "@/lib/webauthn";
 import { cookies } from "next/headers";
+import { badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CHALLENGE_COOKIE = "fisca_wa_reg_challenge";
 
-/** GET → devuelve las options de registración (challenge). */
 export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { rpID, rpName } = getRpConfig();
 
@@ -53,21 +54,26 @@ export async function GET() {
   return NextResponse.json(options);
 }
 
-/** POST → verifica el attestationResponse y guarda la credential. */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
+
+  const rl = await rateLimit(supabase, user.id, "auth:passkey-register", {
+    limit: 5,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany(undefined, rl.retryAfter);
 
   const cookieStore = await cookies();
   const expectedChallenge = cookieStore.get(CHALLENGE_COOKIE)?.value;
-  if (!expectedChallenge) {
-    return NextResponse.json({ error: "Challenge no encontrado." }, { status: 400 });
-  }
+  if (!expectedChallenge) return badRequest("Sesión de registro expirada. Reintentá.");
 
-  const body: RegistrationResponseJSON = await request.json();
+  const body = (await request.json().catch(() => null)) as RegistrationResponseJSON | null;
+  if (!body) return badRequest("Datos inválidos.");
+
   const { rpID, origins } = getRpConfig();
 
   let verification;
@@ -80,14 +86,14 @@ export async function POST(request: Request) {
       requireUserVerification: true,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Verificación fallida." },
-      { status: 400 }
-    );
+    // No exponemos el mensaje interno de simplewebauthn — puede revelar
+    // detalles del formato del challenge, dispositivo, etc.
+    console.error("[passkey register]", err);
+    return badRequest("No se pudo verificar el dispositivo.");
   }
 
   if (!verification.verified || !verification.registrationInfo) {
-    return NextResponse.json({ error: "No verificado." }, { status: 400 });
+    return badRequest("No se pudo verificar el dispositivo.");
   }
 
   const { credential } = verification.registrationInfo;
@@ -102,6 +108,6 @@ export async function POST(request: Request) {
 
   cookieStore.delete(CHALLENGE_COOKIE);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return internalError(error);
   return NextResponse.json({ ok: true });
 }

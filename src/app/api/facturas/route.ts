@@ -7,6 +7,8 @@ import { AfipError } from "@/lib/afip/errors";
 import { CBTE_TIPO_FACTURA_C } from "@/lib/afip/types";
 import { nuevaFacturaSchema } from "@/lib/validation";
 import type { Ambiente } from "@/lib/afip/config";
+import { apiError, badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -14,17 +16,18 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
-  const json = await request.json();
+  const rl = await rateLimit(supabase, user.id, "facturas:c", {
+    limit: 120,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany("Facturaste muy rápido. Esperá un momento.", rl.retryAfter);
+
+  const json = await request.json().catch(() => null);
   const parsed = nuevaFacturaSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues.map((i) => i.message).join(" ") },
-      { status: 400 }
-    );
+    return badRequest(parsed.error.issues.map((i) => i.message).join(" "));
   }
   const input = parsed.data;
 
@@ -35,10 +38,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!config) {
-    return NextResponse.json(
-      { error: "Todavía no cargaste tu configuración de ARCA (CUIT, certificado, etc.)." },
-      { status: 400 }
-    );
+    return badRequest("Todavía no cargaste tu configuración de ARCA (CUIT, certificado, etc.).");
   }
 
   try {
@@ -117,11 +117,10 @@ export async function POST(request: Request) {
     if (insertError || !inserted) {
       // El CAE ya fue otorgado por AFIP; lo devolvemos igual aunque falle el guardado local,
       // para no hacerle perder al usuario un comprobante que ya es legalmente válido.
-      return NextResponse.json(
-        {
-          error: `La factura fue autorizada por AFIP (CAE ${cae.cae}) pero no se pudo guardar en el historial: ${insertError?.message}. Anotá el CAE.`,
-        },
-        { status: 500 }
+      console.error("[facturas c] insert failed after CAE:", insertError);
+      return apiError(
+        500,
+        `La factura fue autorizada por AFIP (CAE ${cae.cae}) pero no se pudo guardar en el historial. Anotá el CAE.`
       );
     }
 
@@ -149,12 +148,8 @@ export async function POST(request: Request) {
       puntoVenta: config.punto_venta,
     });
   } catch (err) {
-    if (err instanceof AfipError) {
-      return NextResponse.json({ error: err.message }, { status: 422 });
-    }
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error inesperado al emitir la factura." },
-      { status: 500 }
-    );
+    // AfipError es intencionalmente amigable (ya está sanitizado desde el SOAP).
+    if (err instanceof AfipError) return apiError(422, err.message);
+    return internalError(err, "Error inesperado al emitir la factura.");
   }
 }

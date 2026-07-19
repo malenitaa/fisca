@@ -10,18 +10,28 @@ import {
   CBTE_TIPO_NOTA_CREDITO_E,
 } from "@/lib/afip/types";
 import type { Ambiente } from "@/lib/afip/config";
+import { apiError, badRequest, internalError, notFound, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Anula una factura C emitida por error emitiendo la Nota de Crédito C asociada. */
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  if (!UUID_RE.test(id)) return badRequest("ID inválido.");
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
+
+  const rl = await rateLimit(supabase, user.id, "facturas:nc", {
+    limit: 30,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany("Demasiadas anulaciones seguidas.", rl.retryAfter);
 
   const { data: original } = await supabase
     .from("invoices")
@@ -30,29 +40,19 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!original) {
-    return NextResponse.json({ error: "Factura no encontrada." }, { status: 404 });
-  }
+  if (!original) return notFound("Factura no encontrada.");
 
   if (original.comprobante_asociado_id !== null) {
-    return NextResponse.json(
-      { error: "Este comprobante ya es una Nota de Crédito, no se puede anular." },
-      { status: 400 }
-    );
+    return badRequest("Este comprobante ya es una Nota de Crédito, no se puede anular.");
   }
 
-  // Bloqueo: la anulación de Factura E (via NC E) usa WSFEXv1 — todavía no
-  // está implementado. Se avisa explícitamente para no confundir al usuario.
   if (
     original.cbte_tipo === CBTE_TIPO_FACTURA_E ||
     original.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E
   ) {
-    return NextResponse.json(
-      {
-        error:
-          "La anulación de Facturas E todavía no está implementada. Pedile ayuda al soporte o esperá la próxima versión.",
-      },
-      { status: 501 }
+    return apiError(
+      501,
+      "La anulación de Facturas E todavía no está implementada. Pedile ayuda al soporte o esperá la próxima versión."
     );
   }
 
@@ -62,12 +62,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     .eq("comprobante_asociado_id", id)
     .maybeSingle();
 
-  if (yaAnulada) {
-    return NextResponse.json(
-      { error: "Esta factura ya tiene una Nota de Crédito asociada." },
-      { status: 400 }
-    );
-  }
+  if (yaAnulada) return badRequest("Esta factura ya tiene una Nota de Crédito asociada.");
 
   const { data: config } = await supabase
     .from("afip_config")
@@ -75,9 +70,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!config) {
-    return NextResponse.json({ error: "Falta la configuración de ARCA." }, { status: 400 });
-  }
+  if (!config) return badRequest("Falta la configuración de ARCA.");
 
   try {
     const cert = decryptSecret(config.cert_encrypted);
@@ -149,11 +142,10 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       .single();
 
     if (insertError || !inserted) {
-      return NextResponse.json(
-        {
-          error: `ARCA autorizó la Nota de Crédito (CAE ${cae.cae}) pero no se pudo guardar en el historial: ${insertError?.message}. Anotá el CAE.`,
-        },
-        { status: 500 }
+      console.error("[nota-credito] insert failed after CAE:", insertError);
+      return apiError(
+        500,
+        `ARCA autorizó la Nota de Crédito (CAE ${cae.cae}) pero no se pudo guardar en el historial. Anotá el CAE.`
       );
     }
 
@@ -165,12 +157,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
       puntoVenta: original.punto_venta,
     });
   } catch (err) {
-    if (err instanceof AfipError) {
-      return NextResponse.json({ error: err.message }, { status: 422 });
-    }
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error inesperado al anular la factura." },
-      { status: 500 }
-    );
+    if (err instanceof AfipError) return apiError(422, err.message);
+    return internalError(err, "Error inesperado al anular la factura.");
   }
 }
