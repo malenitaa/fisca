@@ -2,18 +2,23 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { certificateMatchesKey } from "@/lib/csr";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
+import { badRequest, internalError, notFound, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
-/**
- * La usuaria trae el .crt firmado por ARCA. Verificamos que corresponda al
- * par de claves generado, y lo guardamos junto con la clave (que ya teníamos
- * cifrada en csr_drafts) en afip_config.
- */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+  if (!user) return unauthorized();
+
+  const rl = await rateLimit(supabase, user.id, "csr:submit", {
+    limit: 10,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany(undefined, rl.retryAfter);
 
   const body = await request.json().catch(() => null);
   const draftId = typeof body?.draftId === "string" ? body.draftId : "";
@@ -23,12 +28,14 @@ export async function POST(request: Request) {
   const razonSocial = typeof body?.razonSocial === "string" ? body.razonSocial.trim() : "";
 
   const puntoVenta = Number(puntoVentaRaw);
-  if (!Number.isInteger(puntoVenta) || puntoVenta < 1) {
-    return NextResponse.json({ error: "Punto de venta inválido." }, { status: 400 });
+  if (!Number.isInteger(puntoVenta) || puntoVenta < 1 || puntoVenta > 9999) {
+    return badRequest("Punto de venta inválido.");
   }
-  if (!draftId || !crt) {
-    return NextResponse.json({ error: "Faltan datos." }, { status: 400 });
+  if (!UUID_RE.test(draftId)) return badRequest("Borrador inválido.");
+  if (!crt || crt.length > 8000 || !crt.includes("BEGIN CERTIFICATE")) {
+    return badRequest("Certificado inválido.");
   }
+  if (razonSocial.length > 200) return badRequest("Razón social demasiado larga.");
 
   const { data: draft, error: draftError } = await supabase
     .from("csr_drafts")
@@ -37,18 +44,13 @@ export async function POST(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (draftError || !draft) {
-    return NextResponse.json({ error: "Borrador no encontrado." }, { status: 404 });
-  }
+  if (draftError) return internalError(draftError);
+  if (!draft) return notFound("Borrador no encontrado.");
 
   const keyPem = decryptSecret(draft.key_encrypted);
   if (!certificateMatchesKey(crt, keyPem)) {
-    return NextResponse.json(
-      {
-        error:
-          "El certificado no corresponde al CSR generado. Asegurate de subir el .crt que ARCA firmó a partir del CSR de esta sesión.",
-      },
-      { status: 400 }
+    return badRequest(
+      "El certificado no corresponde al CSR generado. Asegurate de subir el .crt que ARCA firmó a partir del CSR de esta sesión."
     );
   }
 
@@ -65,9 +67,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return internalError(error);
 
   await Promise.all([
     supabase.from("csr_drafts").delete().eq("id", draft.id),

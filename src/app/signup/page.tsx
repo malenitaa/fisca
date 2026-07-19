@@ -40,8 +40,7 @@ export default function SignupPage() {
         <h1 className="mb-2 text-xl font-semibold">No se pudo crear la cuenta</h1>
         <p className="mb-6 text-sm text-[#7bb0e0]">{errorMessage}</p>
         <p className="mb-6 max-w-xs text-xs text-[#7bb0e0]">
-          Puede ser que el signup anónimo no esté habilitado en Supabase. Andá al panel
-          de Supabase → Authentication → Providers y activá &quot;Anonymous Sign-Ins&quot;.
+          Reintentá en un rato, o entrá con tu email si ya tenés cuenta.
         </p>
         <Link
           href="/login"

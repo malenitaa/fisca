@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { hashPin, isValidPinFormat } from "@/lib/pin";
+import { badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Setea un nuevo PIN tras entrar por magic link.
@@ -12,15 +14,17 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
+
+  const rl = await rateLimit(supabase, user.id, "auth:pin-reset", {
+    limit: 5,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany("Demasiados intentos. Esperá un momento.", rl.retryAfter);
 
   const body = await request.json().catch(() => null);
   const pin = body?.pin;
-  if (!isValidPinFormat(pin)) {
-    return NextResponse.json({ error: "El PIN debe tener 6 dígitos." }, { status: 400 });
-  }
+  if (!isValidPinFormat(pin)) return badRequest("El PIN debe tener 6 dígitos.");
 
   const { error } = await supabase.from("user_pins").upsert({
     user_id: user.id,
@@ -30,9 +34,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return internalError(error);
 
   return NextResponse.json({ ok: true });
 }

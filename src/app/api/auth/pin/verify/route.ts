@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { verifyPin, isValidPinFormat } from "@/lib/pin";
+import { badRequest, internalError, notFound, unauthorized } from "@/lib/api-errors";
 
 const MAX_ATTEMPTS = 3;
 // Bloqueo largo: si te comiste 3 intentos, tenés que ir por magic link.
@@ -12,15 +13,11 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const body = await request.json().catch(() => null);
   const pin = body?.pin;
-  if (!isValidPinFormat(pin)) {
-    return NextResponse.json({ error: "PIN inválido." }, { status: 400 });
-  }
+  if (!isValidPinFormat(pin)) return badRequest("PIN inválido.");
 
   const { data: row, error } = await supabase
     .from("user_pins")
@@ -28,12 +25,8 @@ export async function POST(request: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  if (!row) {
-    return NextResponse.json({ error: "No hay PIN configurado." }, { status: 404 });
-  }
+  if (error) return internalError(error);
+  if (!row) return notFound("No hay PIN configurado.");
 
   if (row.locked_until && new Date(row.locked_until) > new Date()) {
     return NextResponse.json(

@@ -2,17 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generarQrDataUrl } from "@/lib/afip/qr";
 import { renderInvoicePdf } from "@/lib/pdf/invoice-pdf";
+import { badRequest, notFound, unauthorized } from "@/lib/api-errors";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  if (!UUID_RE.test(id)) return badRequest("ID inválido.");
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const { data: invoice } = await supabase
     .from("invoices")
@@ -21,9 +24,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!invoice) {
-    return NextResponse.json({ error: "Factura no encontrada." }, { status: 404 });
-  }
+  if (!invoice) return notFound("Factura no encontrada.");
 
   const { data: config } = await supabase
     .from("afip_config")

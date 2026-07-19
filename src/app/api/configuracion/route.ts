@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { encryptSecret } from "@/lib/crypto";
 import { configuracionSchema } from "@/lib/validation";
+import { badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -9,17 +11,18 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
-  const json = await request.json();
+  const rl = await rateLimit(supabase, user.id, "configuracion", {
+    limit: 10,
+    windowSeconds: 3600,
+  });
+  if (!rl.ok) return tooMany(undefined, rl.retryAfter);
+
+  const json = await request.json().catch(() => null);
   const parsed = configuracionSchema.safeParse(json);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues.map((i) => i.message).join(" ") },
-      { status: 400 }
-    );
+    return badRequest(parsed.error.issues.map((i) => i.message).join(" "));
   }
 
   const { cuit, razonSocial, puntoVenta, ambiente, cert, key } = parsed.data;
@@ -35,9 +38,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return internalError(error);
 
   // Si cambió cert/ambiente, el TA cacheado (si había uno) queda inválido.
   await supabase.from("afip_tickets").delete().eq("user_id", user.id);
