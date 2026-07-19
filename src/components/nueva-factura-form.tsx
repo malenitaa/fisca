@@ -122,7 +122,7 @@ export function NuevaFacturaForm() {
         <p className="mb-4 text-sm text-green-800 dark:text-green-400">
           CAE {result.cae} · vence {result.caeVencimiento}
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <a
             href={`/api/facturas/${result.facturaId}/pdf`}
             className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
@@ -153,7 +153,7 @@ export function NuevaFacturaForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Concepto</label>
           <select
@@ -187,7 +187,7 @@ export function NuevaFacturaForm() {
       </div>
 
       {concepto !== 1 && (
-        <div className="grid grid-cols-3 gap-3 rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
+        <div className="grid grid-cols-1 gap-3 rounded-md bg-neutral-50 p-3 sm:grid-cols-3 dark:bg-neutral-900">
           <div>
             <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
               Servicio desde
@@ -222,14 +222,14 @@ export function NuevaFacturaForm() {
             />
           </div>
           {fieldErrors["fechaServicioDesde"] && (
-            <p className="col-span-3 text-sm text-red-600 dark:text-red-400">
+            <p className="text-sm text-red-600 sm:col-span-3 dark:text-red-400">
               {fieldErrors["fechaServicioDesde"]}
             </p>
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Cliente</label>
           <select
