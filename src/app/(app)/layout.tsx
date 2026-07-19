@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomTabs } from "@/components/bottom-tabs";
+import { ShakeToFeedback } from "@/components/shake-to-feedback";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </main>
       <BottomTabs />
+      <ShakeToFeedback />
     </div>
   );
 }

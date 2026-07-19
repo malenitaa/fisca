@@ -70,6 +70,34 @@ export function NuevaFacturaForm() {
     [items]
   );
 
+  const puedeEmitir = useMemo(() => {
+    const hayItemValido = items.some(
+      (it) =>
+        it.descripcion.trim().length > 0 &&
+        Number(it.precioUnitario) > 0 &&
+        Number(it.cantidad) > 0
+    );
+    if (!hayItemValido) return false;
+    if (docTipo !== 99 && !docNro.trim()) return false;
+    if (
+      concepto !== 1 &&
+      (!fechaServicioDesde || !fechaServicioHasta || !fechaVtoPago)
+    ) {
+      return false;
+    }
+    return true;
+  }, [items, docTipo, docNro, concepto, fechaServicioDesde, fechaServicioHasta, fechaVtoPago]);
+
+  function scrollToField(path: string) {
+    const el = document.querySelector<HTMLElement>(`[data-field="${path}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const input = el.querySelector<HTMLInputElement | HTMLSelectElement>(
+      "input, select, textarea"
+    );
+    setTimeout(() => input?.focus(), 300);
+  }
+
   function updateItem(index: number, patch: Partial<ItemRow>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   }
@@ -116,6 +144,8 @@ export function NuevaFacturaForm() {
       setFieldErrors(errs);
       setStatus("error");
       setErrorMessage("Revisá los campos marcados antes de continuar.");
+      const firstErrorPath = parsed.error.issues[0]?.path.join(".");
+      if (firstErrorPath) scrollToField(firstErrorPath);
       return;
     }
 
@@ -292,7 +322,10 @@ export function NuevaFacturaForm() {
                   </select>
                 </div>
               </label>
-              <label className="flex items-center justify-between px-4 py-3 text-sm">
+              <label
+                data-field="docNro"
+                className="flex items-center justify-between px-4 py-3 text-sm"
+              >
                 <span className="text-neutral-500 dark:text-neutral-400">Número</span>
                 <input
                   value={docNro}
@@ -320,7 +353,10 @@ export function NuevaFacturaForm() {
           )}
 
           {concepto !== 1 && (
-            <div className="grid grid-cols-1 gap-3 bg-neutral-50 px-4 py-3 text-sm sm:grid-cols-3 dark:bg-neutral-900/50">
+            <div
+              data-field="fechaServicioDesde"
+              className="grid grid-cols-1 gap-3 bg-neutral-50 px-4 py-3 text-sm sm:grid-cols-3 dark:bg-neutral-900/50"
+            >
               <div>
                 <span className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
                   Servicio desde
@@ -375,7 +411,7 @@ export function NuevaFacturaForm() {
             const precN = Number(item.precioUnitario) || 0;
             const subtotal = cantN * precN;
             return (
-              <div key={index} className="px-4 py-3">
+              <div key={index} data-field={`items.${index}.descripcion`} className="px-4 py-3">
                 <div className="mb-1.5 flex items-center gap-2">
                   <input
                     value={item.descripcion}
@@ -463,7 +499,11 @@ export function NuevaFacturaForm() {
           <button
             type="submit"
             disabled={status === "submitting"}
-            className="w-full rounded-xl bg-[#003366] px-3 py-3.5 text-[15px] font-semibold text-white disabled:opacity-50 hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+            className={`w-full rounded-xl px-3 py-3.5 text-[15px] font-semibold text-white ${
+              puedeEmitir
+                ? "bg-[#003366] hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+                : "bg-neutral-300 dark:bg-neutral-700"
+            } disabled:opacity-50`}
           >
             {status === "submitting" ? "Emitiendo..." : "Emitir factura C"}
           </button>
