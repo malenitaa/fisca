@@ -12,6 +12,9 @@ const PUBLIC_PATHS_STARTSWITH = [
   "/apple-icon",
   "/icon",
   "/favicon",
+  // Estado de ARCA: pin público sin auth, se muestra tanto en /ayuda como
+  // en /login (antes de tener sesión).
+  "/api/afip/status",
 ];
 
 /** Rutas que sirven marketing público (landing) — SEO indexable, sin sesión. */

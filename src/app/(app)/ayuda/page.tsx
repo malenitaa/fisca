@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getAfipStatus } from "@/lib/afip/status";
 
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
@@ -130,7 +131,9 @@ const FEEDBACK_MAILTO = `mailto:malvertva99@gmail.com?subject=${encodeURICompone
   "Queja o sugerencia - Fisca"
 )}`;
 
-export default function AyudaPage() {
+export default async function AyudaPage() {
+  const arcaStatus = await getAfipStatus();
+
   return (
     <div className="space-y-5">
       <Link
@@ -189,8 +192,13 @@ export default function AyudaPage() {
             Estado de los servicios de ARCA
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
-            <span aria-hidden className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">Operativo</span>
+            <span
+              aria-hidden
+              className={`h-2 w-2 rounded-full ${arcaStatus.ok ? "bg-emerald-500" : "bg-amber-500"}`}
+            />
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              {arcaStatus.ok ? "Operativo" : "Con problemas"}
+            </span>
           </span>
         </div>
       </div>
