@@ -1,6 +1,45 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Orígenes permitidos para requests cross-origin. Se usa cuando la app se
+ * ejecuta bundleada dentro de Capacitor (WKWebView carga desde
+ * `capacitor://localhost` en iOS o `https://localhost` en Android) y pega
+ * al backend en fisca.vercel.app. Se autoriza por lista blanca.
+ */
+const ALLOWED_ORIGINS = new Set([
+  "capacitor://localhost",
+  "ionic://localhost",
+  "https://localhost",
+]);
+
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  // También permitimos el origin explícito que se setea en Vercel env
+  // (para dev/testing).
+  const extra = process.env.NEXT_PUBLIC_CAPACITOR_ORIGIN;
+  if (extra && origin === extra) return true;
+  return false;
+}
+
+function applyCors(response: NextResponse, origin: string | null) {
+  if (!isOriginAllowed(origin)) return response;
+  response.headers.set("Access-Control-Allow-Origin", origin!);
+  response.headers.set("Access-Control-Allow-Credentials", "true");
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  response.headers.set("Access-Control-Max-Age", "86400");
+  response.headers.append("Vary", "Origin");
+  return response;
+}
+
 const PUBLIC_PATHS_STARTSWITH = [
   "/login",
   "/signup",
@@ -77,6 +116,15 @@ function applySecurityHeaders(response: NextResponse, path: string) {
 
 /** Refresca la sesión de Supabase y redirige a /login si no hay usuario autenticado. */
 export async function updateSession(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  const path = request.nextUrl.pathname;
+
+  // Preflight de CORS para requests cross-origin desde Capacitor bundled.
+  // Se responde 204 sin body y solo con los headers de CORS.
+  if (request.method === "OPTIONS" && path.startsWith("/api/")) {
+    return applyCors(new NextResponse(null, { status: 204 }), origin);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -104,7 +152,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isPublicPath =
     PUBLIC_PATHS_STARTSWITH.some((p) => path.startsWith(p)) ||
     PUBLIC_PATHS_EXACT.includes(path);
@@ -112,8 +159,8 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    return applySecurityHeaders(NextResponse.redirect(loginUrl), path);
+    return applyCors(applySecurityHeaders(NextResponse.redirect(loginUrl), path), origin);
   }
 
-  return applySecurityHeaders(response, path);
+  return applyCors(applySecurityHeaders(response, path), origin);
 }
