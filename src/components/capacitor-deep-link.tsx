@@ -4,11 +4,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+type Handle = { remove: () => void | Promise<void> };
+
 interface CapacitorPluginsApp {
   addListener(
     event: "appUrlOpen",
     handler: (data: { url: string }) => void | Promise<void>
-  ): Promise<{ remove: () => Promise<void> }>;
+  ): Handle | Promise<Handle>;
 }
 
 interface CapacitorGlobal {
@@ -25,8 +27,7 @@ export function CapacitorDeepLink() {
     const AppPlugin = cap.Plugins?.App;
     if (!AppPlugin) return;
 
-    let handle: { remove: () => Promise<void> } | undefined;
-    AppPlugin.addListener("appUrlOpen", async ({ url }) => {
+    const result = AppPlugin.addListener("appUrlOpen", async ({ url }) => {
       if (!url.startsWith("fisca://auth-callback")) return;
       const parsed = new URL(url);
       const raw = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.search.slice(1);
@@ -37,9 +38,18 @@ export function CapacitorDeepLink() {
       const supabase = createClient();
       const { error } = await supabase.auth.setSession({ access_token, refresh_token });
       if (!error) router.replace("/facturas");
-    }).then((h) => {
-      handle = h;
     });
+
+    // El bridge de Capacitor devuelve el handle sincrónicamente, pero
+    // el paquete @capacitor/app envuelve en Promise — soportamos ambos.
+    let handle: Handle | undefined;
+    if (result && typeof (result as Promise<Handle>).then === "function") {
+      (result as Promise<Handle>).then((h) => {
+        handle = h;
+      });
+    } else {
+      handle = result as Handle;
+    }
 
     return () => {
       handle?.remove();
