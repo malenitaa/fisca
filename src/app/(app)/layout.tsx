@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // realmente fijo en Capacitor iOS WebView.
   return (
     <div
-      className="fixed inset-0 flex flex-col"
+      className="fixed inset-0 flex flex-col bg-white dark:bg-neutral-950"
       style={{
         paddingTop: "env(safe-area-inset-top)",
       }}
