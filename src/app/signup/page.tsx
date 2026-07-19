@@ -61,12 +61,12 @@ export default function SignupPage() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div style={{ animation: "fisca-splash-in .7s cubic-bezier(.2,.8,.2,1) both" }}>
-        <LogoBolt className="mb-4 h-16 w-16" pulse />
+      <div style={{ animation: "fisca-splash-in .9s cubic-bezier(.2,.8,.2,1) both" }}>
+        <LogoBolt className="h-16 w-16" pulse />
       </div>
       <p
-        className="text-sm text-[#7bb0e0]"
-        style={{ animation: "fisca-splash-in .7s .15s cubic-bezier(.2,.8,.2,1) both" }}
+        className="absolute bottom-14 text-sm text-[#7bb0e0]"
+        style={{ animation: "fisca-splash-in .9s .15s cubic-bezier(.2,.8,.2,1) both" }}
       >
         Preparando tu cuenta…
       </p>
