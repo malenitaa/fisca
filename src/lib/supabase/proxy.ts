@@ -1,7 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth/callback",
+  // Rutas del PWA que Safari/Chrome piden sin sesión para reconocer
+  // la app como instalable ("Agregar a inicio"). Si redirigen a /login,
+  // el ícono/manifest no se leen y la instalación no queda como app.
+  "/manifest.webmanifest",
+  "/apple-icon",
+  "/icon",
+  "/favicon",
+];
 
 /** Refresca la sesión de Supabase y redirige a /login si no hay usuario autenticado. */
 export async function updateSession(request: NextRequest) {
