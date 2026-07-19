@@ -26,6 +26,7 @@ export function AnularFacturaButton({
         throw new Error(body.error ?? "No se pudo anular la factura.");
       }
       setConfirming(false);
+      router.replace("/facturas/historial");
       router.refresh();
     } catch (err) {
       setStatus("error");

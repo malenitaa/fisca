@@ -272,18 +272,6 @@ export function NuevaFacturaForm() {
           {!clienteEsCF && (
             <>
               <label className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="text-neutral-500 dark:text-neutral-400">
-                  {docTipo === 80 ? "CUIT" : "DNI"}
-                </span>
-                <input
-                  value={docNro}
-                  onChange={(e) => setDocNro(e.target.value)}
-                  inputMode="numeric"
-                  placeholder={docTipo === 80 ? "CUIT" : "DNI"}
-                  className="w-1/2 border-0 bg-transparent p-0 text-right text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
-                />
-              </label>
-              <label className="flex items-center justify-between px-4 py-3 text-sm">
                 <span className="text-neutral-500 dark:text-neutral-400">Tipo</span>
                 <div className="relative flex items-center">
                   <span className="pr-1 text-neutral-900 dark:text-neutral-100">
@@ -303,6 +291,16 @@ export function NuevaFacturaForm() {
                     ))}
                   </select>
                 </div>
+              </label>
+              <label className="flex items-center justify-between px-4 py-3 text-sm">
+                <span className="text-neutral-500 dark:text-neutral-400">Número</span>
+                <input
+                  value={docNro}
+                  onChange={(e) => setDocNro(e.target.value)}
+                  inputMode="numeric"
+                  placeholder={docTipo === 80 ? "CUIT" : "DNI"}
+                  className="w-1/2 border-0 bg-transparent p-0 text-right text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+                />
               </label>
               {fieldErrors["docNro"] && (
                 <p className="px-4 pb-2 text-sm text-red-600 dark:text-red-400">

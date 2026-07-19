@@ -28,23 +28,37 @@ export function FacturaEmitidaSuccess({
   const [sharing, setSharing] = useState(false);
 
   async function compartir() {
-    const pdfUrl = `${window.location.origin}/api/facturas/${facturaId}/pdf`;
-    const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}\nPDF: ${pdfUrl}`;
+    setSharing(true);
+    const pdfUrl = `/api/facturas/${facturaId}/pdf`;
+    const texto = `${titulo} ${numero}\nTotal: ${total}\nCAE: ${cae}`;
 
-    // Web Share API — en iOS abre la hoja de share nativa con WhatsApp
-    // y demás apps. Fallback: link wa.me directo.
-    if (typeof navigator !== "undefined" && navigator.share) {
-      setSharing(true);
-      try {
-        await navigator.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
-      } catch {
-        // el user canceló, no-op
-      } finally {
-        setSharing(false);
+    try {
+      const res = await fetch(pdfUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `factura-${numero}.pdf`, {
+        type: "application/pdf",
+      });
+
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+
+      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: `${titulo} ${numero}`,
+          text: texto,
+        });
+      } else if (nav.share) {
+        await nav.share({ title: `${titulo} ${numero}`, text: texto, url: pdfUrl });
+      } else {
+        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
       }
-      return;
+    } catch {
+      // Cancelado o error — no-op.
+    } finally {
+      setSharing(false);
     }
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   }
 
   return (

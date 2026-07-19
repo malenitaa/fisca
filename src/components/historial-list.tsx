@@ -104,12 +104,20 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
     [filtered]
   );
 
-  // Resumen del período actual (mes en curso), separando por moneda para
-  // no mezclar pesos con dólares. Ignora anuladas.
+  // Resumen del período actual (mes en curso). Muestra sólo facturas
+  // VÁLIDAS (no anuladas), separando por moneda. Excluye las notas de
+  // crédito de la suma porque conceptualmente son la anulación de la
+  // factura correspondiente — sumarlas contaría dos veces (una la
+  // factura, otra su NC), y como al anularse la factura ya se filtró,
+  // sumar la NC daría un total al revés.
   const currentMonth = new Date().toISOString().slice(0, 7);
   const summary = useMemo(() => {
     const filas = invoices.filter(
-      (i) => i.fecha_emision.startsWith(currentMonth) && !idsAnulados.has(i.id)
+      (i) =>
+        i.fecha_emision.startsWith(currentMonth) &&
+        !idsAnulados.has(i.id) &&
+        i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
+        i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E
     );
     const totalArs = filas
       .filter((i) => !i.moneda || i.moneda === "PES")
@@ -140,12 +148,16 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           (i) =>
             i.fecha_emision.startsWith(currentMonth) &&
             !idsAnulados.has(i.id) &&
+            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
+            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E &&
             (!i.moneda || i.moneda === "PES")
         ).length;
         const usdInvoices = invoices.filter(
           (i) =>
             i.fecha_emision.startsWith(currentMonth) &&
             !idsAnulados.has(i.id) &&
+            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
+            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E &&
             i.moneda === "DOL"
         ).length;
         const usdEsPrincipal =
