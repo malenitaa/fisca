@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { LogoIcon } from "@/components/logo";
 
 export const metadata: Metadata = {
-  title: "Fisca — Facturación electrónica ARCA",
+  title: "Fisca — Facturá sin burocracia",
   description:
-    "Facturación electrónica ARCA para monotributistas argentinos. Emití Facturas C y E con CAE real desde el celular.",
+    "Facturas electrónicas con CAE de ARCA, desde tu celular. Emití Factura C y Factura E para monotributistas argentinos.",
   keywords: [
     "facturación electrónica monotributista",
     "factura C ARCA",
@@ -17,18 +16,12 @@ export const metadata: Metadata = {
     "CAE monotributista",
   ],
   openGraph: {
-    title: "Fisca — Facturación electrónica ARCA",
-    description:
-      "Facturación electrónica ARCA para monotributistas. Factura C y E con CAE, desde el celular.",
+    title: "Fisca — Facturá sin burocracia",
+    description: "Facturas electrónicas con CAE de ARCA, desde tu celular.",
     url: "https://fisca.vercel.app",
     siteName: "Fisca",
     locale: "es_AR",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Fisca — Facturación electrónica ARCA",
-    description: "Factura C y E con CAE, desde el celular.",
   },
   alternates: {
     canonical: "https://fisca.vercel.app",
@@ -46,28 +39,83 @@ export default async function RootPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-12">
-        <div className="mb-8 flex items-center gap-2">
-          <LogoIcon className="h-9 w-9" />
-          <span className="text-2xl font-semibold tracking-tight">Fisca</span>
-        </div>
-
-        <h1 className="mb-4 text-3xl font-semibold leading-tight tracking-tight">
-          Facturación electrónica ARCA
+    <main
+      className="flex h-dvh flex-col overflow-hidden bg-[#003366] text-white"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      <div className="flex flex-1 flex-col justify-end px-8 pb-16">
+        <h1 className="mb-4 text-5xl font-semibold leading-[1.05] tracking-tight">
+          Facturá sin
+          <br />
+          burocracia.
         </h1>
-
-        <p className="mb-8 text-base leading-relaxed text-neutral-600 dark:text-neutral-400">
-          Conectás tu certificado de ARCA una sola vez. Se guarda cifrado en el
-          servidor — ningún tercero lo ve, ni siquiera nosotros.
+        <p className="mb-10 max-w-xs text-[15px] leading-relaxed text-[#7bb0e0]">
+          Facturas electrónicas con CAE de ARCA, desde tu celular.
         </p>
 
+        <ul className="space-y-4">
+          <li className="flex items-center gap-3 text-[15px]">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 shrink-0 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M4 3h16v18l-4-2-4 2-4-2-4 2V3z" />
+              <path d="M8 7h8M8 11h8M8 15h5" />
+            </svg>
+            <span>Factura C y E</span>
+          </li>
+          <li className="flex items-center gap-3 text-[15px]">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 shrink-0 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+            <span>CAE autorizado al instante</span>
+          </li>
+          <li className="flex items-center gap-3 text-[15px]">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5 shrink-0 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>Compartí el PDF por WhatsApp</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="px-6 pb-8">
         <Link
           href="/login"
-          className="rounded-xl bg-[#003366] px-6 py-3.5 text-center text-[15px] font-semibold text-white hover:bg-[#002855] dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+          className="block rounded-2xl bg-white px-6 py-4 text-center text-[16px] font-semibold text-[#003366] active:bg-white/90"
         >
-          Comenzar
+          Vincular con ARCA
         </Link>
+        <p className="mt-4 text-center text-xs text-[#7bb0e0]">
+          Usás tu CUIT y clave fiscal. No guardamos tu clave.
+        </p>
       </div>
     </main>
   );
