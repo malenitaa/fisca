@@ -14,11 +14,19 @@ export default function LoginPage() {
     setErrorMessage("");
 
     const supabase = createClient();
+    // Cuando la web corre adentro del shell nativo de Capacitor
+    // (`window.Capacitor.isNativePlatform`), el magic link tiene que
+    // volver por el URL scheme `fisca://` para reabrir la app. En el
+    // navegador o en el PWA es un no-op — sigue el flujo web normal.
+    const capacitor = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    const isNative = capacitor?.isNativePlatform?.() ?? false;
+    const emailRedirectTo = isNative
+      ? "fisca://auth-callback"
+      : `${window.location.origin}/auth/callback`;
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo },
     });
 
     if (error) {
