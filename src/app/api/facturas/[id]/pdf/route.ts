@@ -56,6 +56,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     docTipoReceptor: invoice.cliente_doc_tipo,
     docNroReceptor: invoice.cliente_doc_nro,
     cae: invoice.cae,
+    moneda: invoice.moneda,
+    cotizacion: Number(invoice.moneda_cotizacion ?? 1),
   });
 
   const pdfBuffer = await renderInvoicePdf({
@@ -68,7 +70,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     clienteDocTipo: invoice.cliente_doc_tipo,
     clienteDocNro: invoice.cliente_doc_nro,
     clienteNombre: invoice.cliente_nombre,
-    condicionIvaReceptorId: invoice.condicion_iva_receptor_id ?? 5,
+    condicionIvaReceptorId: invoice.condicion_iva_receptor_id,
+    clientePais: invoice.cliente_pais,
+    clienteDomicilio: invoice.cliente_domicilio,
+    clienteIdImpositivo: invoice.cliente_id_impositivo,
+    moneda: invoice.moneda,
+    monedaCotizacion: Number(invoice.moneda_cotizacion ?? 1),
     items: invoice.items,
     importeTotal: Number(invoice.importe_total),
     cae: invoice.cae,

@@ -10,7 +10,7 @@ export default async function HistorialPage() {
   const { data: invoices } = await supabase
     .from("invoices")
     .select(
-      "id, cbte_tipo, punto_venta, numero_comprobante, fecha_emision, cliente_nombre, cliente_doc_nro, cliente_doc_tipo, importe_total, ambiente, comprobante_asociado_id"
+      "id, cbte_tipo, punto_venta, numero_comprobante, fecha_emision, cliente_nombre, cliente_doc_nro, cliente_doc_tipo, importe_total, ambiente, comprobante_asociado_id, moneda"
     )
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false });

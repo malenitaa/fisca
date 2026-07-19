@@ -11,9 +11,11 @@ export async function generarQrDataUrl(params: {
   cbteTipo: number;
   numeroComprobante: number;
   importeTotal: number;
-  docTipoReceptor: number;
-  docNroReceptor: string;
+  docTipoReceptor: number | null;
+  docNroReceptor: string | null;
   cae: string;
+  moneda?: string; // default "PES"
+  cotizacion?: number; // default 1
 }): Promise<string> {
   const payload = {
     ver: 1,
@@ -23,9 +25,9 @@ export async function generarQrDataUrl(params: {
     tipoCmp: params.cbteTipo,
     nroCmp: params.numeroComprobante,
     importe: params.importeTotal,
-    moneda: "PES",
-    ctz: 1,
-    tipoDocRec: params.docTipoReceptor,
+    moneda: params.moneda ?? "PES",
+    ctz: params.cotizacion ?? 1,
+    tipoDocRec: params.docTipoReceptor ?? 99,
     nroDocRec: Number(params.docNroReceptor) || 0,
     tipoCodAut: "E",
     codAut: Number(params.cae),

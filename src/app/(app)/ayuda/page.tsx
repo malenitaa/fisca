@@ -2,6 +2,45 @@ import Link from "next/link";
 
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
+    pregunta: "Trabajo por Deel, ¿qué factura tengo que emitir?",
+    respuesta: (
+      <>
+        Factura E (exportación de servicios), en la moneda que te pagan (USD casi
+        siempre), con la cotización tipo <strong>vendedor</strong> del BNA del día que
+        emitís. NO Factura C — esa es sólo para clientes en Argentina.
+        <br />
+        <br />
+        En esta app: pestaña <strong>Exportación (E)</strong> arriba del formulario
+        de nueva factura. Cliente = &quot;Deel Inc.&quot;, país = Estados Unidos,
+        cargás la cotización, y los ítems en dólares. Legalmente el comprobante es
+        en pesos al tipo de cambio del día — la app lo calcula automático.
+      </>
+    ),
+  },
+  {
+    pregunta: "¿Necesito estar habilitada como exportadora para emitir Factura E?",
+    respuesta: (
+      <>
+        Sí. Como monotributista podés emitir Factura E, pero antes hay que:
+        <ul className="mt-2 ml-4 list-disc space-y-1">
+          <li>
+            Dar de alta el punto de venta específicamente para{" "}
+            <strong>&quot;Factura Electrónica - Exportación&quot;</strong>{" "}
+            (webservice) en el portal de ARCA. Es un tipo distinto al de la Factura C.
+          </li>
+          <li>
+            Habilitar tu certificado digital para el servicio{" "}
+            <strong>&quot;ws - Facturación Electrónica de Exportación&quot;</strong>{" "}
+            (wsfex) en el Administrador de Relaciones. Es una relación aparte de la
+            que usa la Factura C.
+          </li>
+        </ul>
+        Los dos pasos se hacen una sola vez y son gratis — sin eso, ARCA rechaza la
+        Factura E incluso si el resto está bien.
+      </>
+    ),
+  },
+  {
     pregunta: "¿Cómo genero el certificado de ARCA que me pide Configuración?",
     respuesta: (
       <>

@@ -11,9 +11,17 @@ export async function callWsfeSoap(params: {
   endpoint: string;
   soapAction: string;
   body: string;
+  /** Namespace ARCA a usar para el `xmlns:ar` del envelope. Por default el
+   * de WSFEv1; WSFEXv1 pasa el suyo. */
+  namespace?: string;
+  /** Nombre del servicio para los mensajes de error legibles. */
+  serviceName?: string;
 }): Promise<Record<string, unknown>> {
+  const ns = params.namespace ?? "http://ar.gov.afip.dif.FEV1/";
+  const svcName = params.serviceName ?? "WSFEv1";
+
   const envelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="${ns}">
   <soapenv:Header/>
   <soapenv:Body>
     ${params.body}
@@ -32,7 +40,7 @@ export async function callWsfeSoap(params: {
     });
   } catch (err) {
     throw new AfipError(
-      `No se pudo contactar al servicio de facturación de AFIP (WSFEv1). ${
+      `No se pudo contactar al servicio de facturación de AFIP (${svcName}). ${
         err instanceof Error ? err.message : ""
       }`
     );
@@ -46,11 +54,11 @@ export async function callWsfeSoap(params: {
   if (fault) {
     const faultString =
       typeof fault.faultstring === "string" ? fault.faultstring : JSON.stringify(fault);
-    throw new AfipError(`AFIP (WSFEv1) rechazó la solicitud: ${faultString}`);
+    throw new AfipError(`AFIP (${svcName}) rechazó la solicitud: ${faultString}`);
   }
 
   if (!body) {
-    throw new AfipError("Respuesta vacía o inesperada del webservice de AFIP (WSFEv1).");
+    throw new AfipError(`Respuesta vacía o inesperada del webservice de AFIP (${svcName}).`);
   }
 
   return body as Record<string, unknown>;

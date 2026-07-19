@@ -1,8 +1,12 @@
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import {
+  CBTE_TIPO_FACTURA_E,
   CBTE_TIPO_NOTA_CREDITO_C,
+  CBTE_TIPO_NOTA_CREDITO_E,
   CONDICION_IVA_RECEPTOR,
   DOC_TIPOS,
+  MONEDAS,
+  PAISES,
   type FacturaItem,
 } from "@/lib/afip/types";
 
@@ -45,10 +49,17 @@ export interface InvoicePdfData {
   puntoVenta: number;
   numeroComprobante: number;
   fechaEmision: string;
-  clienteDocTipo: number;
-  clienteDocNro: string;
+  // Cliente local (Factura C)
+  clienteDocTipo: number | null;
+  clienteDocNro: string | null;
   clienteNombre: string | null;
-  condicionIvaReceptorId: number;
+  condicionIvaReceptorId: number | null;
+  // Cliente extranjero (Factura E)
+  clientePais?: number | null;
+  clienteDomicilio?: string | null;
+  clienteIdImpositivo?: string | null;
+  moneda?: string; // "PES", "DOL", "060", etc.
+  monedaCotizacion?: number;
   items: FacturaItem[];
   importeTotal: number;
   cae: string;
@@ -61,17 +72,43 @@ function fmtMoney(n: number): string {
   return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function docTipoLabel(value: number): string {
+function docTipoLabel(value: number | null): string {
+  if (value == null) return "";
   return DOC_TIPOS.find((d) => d.value === value)?.label ?? String(value);
 }
 
-function condicionIvaLabel(value: number): string {
+function condicionIvaLabel(value: number | null): string {
+  if (value == null) return "";
   return CONDICION_IVA_RECEPTOR.find((c) => c.value === value)?.label ?? String(value);
 }
 
+function monedaSimbolo(value?: string): string {
+  if (!value || value === "PES") return "$";
+  return MONEDAS.find((m) => m.value === value)?.symbol ?? value;
+}
+
+function paisLabel(codigo: number | null | undefined): string {
+  if (codigo == null) return "";
+  return PAISES.find((p) => p.codigoPais === codigo)?.label ?? String(codigo);
+}
+
+function tituloComprobante(cbteTipo: number): string {
+  switch (cbteTipo) {
+    case CBTE_TIPO_NOTA_CREDITO_C:
+      return "NOTA DE CRÉDITO C";
+    case CBTE_TIPO_FACTURA_E:
+      return "FACTURA E";
+    case CBTE_TIPO_NOTA_CREDITO_E:
+      return "NOTA DE CRÉDITO E";
+    default:
+      return "FACTURA C";
+  }
+}
+
 function InvoiceDocument(data: InvoicePdfData) {
-  const esNotaCredito = data.cbteTipo === CBTE_TIPO_NOTA_CREDITO_C;
-  const titulo = esNotaCredito ? "NOTA DE CRÉDITO C" : "FACTURA C";
+  const esE = data.cbteTipo === CBTE_TIPO_FACTURA_E || data.cbteTipo === CBTE_TIPO_NOTA_CREDITO_E;
+  const titulo = tituloComprobante(data.cbteTipo);
+  const simbolo = monedaSimbolo(data.moneda);
 
   return (
     <Document>
@@ -101,14 +138,43 @@ function InvoiceDocument(data: InvoicePdfData) {
         <View style={styles.box}>
           <Text style={styles.sectionTitle}>Cliente</Text>
           {data.clienteNombre && <Text>{data.clienteNombre}</Text>}
-          <View style={styles.row}>
-            <Text style={styles.label}>{docTipoLabel(data.clienteDocTipo)}</Text>
-            <Text>{data.clienteDocTipo === 99 ? "Consumidor Final" : data.clienteDocNro}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Condición frente al IVA</Text>
-            <Text>{condicionIvaLabel(data.condicionIvaReceptorId)}</Text>
-          </View>
+          {esE ? (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>País</Text>
+                <Text>{paisLabel(data.clientePais)}</Text>
+              </View>
+              {data.clienteDomicilio && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Domicilio</Text>
+                  <Text>{data.clienteDomicilio}</Text>
+                </View>
+              )}
+              {data.clienteIdImpositivo && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>ID fiscal</Text>
+                  <Text>{data.clienteIdImpositivo}</Text>
+                </View>
+              )}
+              <View style={styles.row}>
+                <Text style={styles.label}>Moneda</Text>
+                <Text>
+                  {data.moneda ?? "DOL"} · cotización {(data.monedaCotizacion ?? 1).toFixed(4)}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>{docTipoLabel(data.clienteDocTipo)}</Text>
+                <Text>{data.clienteDocTipo === 99 ? "Consumidor Final" : data.clienteDocNro}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Condición frente al IVA</Text>
+                <Text>{condicionIvaLabel(data.condicionIvaReceptorId)}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.table}>
@@ -122,17 +188,33 @@ function InvoiceDocument(data: InvoicePdfData) {
             <View key={i} style={styles.tableRow}>
               <Text style={styles.colDesc}>{item.descripcion}</Text>
               <Text style={styles.colCant}>{item.cantidad}</Text>
-              <Text style={styles.colPrecio}>${fmtMoney(item.precioUnitario)}</Text>
+              <Text style={styles.colPrecio}>
+                {simbolo}
+                {fmtMoney(item.precioUnitario)}
+              </Text>
               <Text style={styles.colImporte}>
-                ${fmtMoney(item.cantidad * item.precioUnitario)}
+                {simbolo}
+                {fmtMoney(item.cantidad * item.precioUnitario)}
               </Text>
             </View>
           ))}
         </View>
 
         <View style={styles.totalRow}>
-          <Text style={{ fontWeight: 700 }}>Total: ${fmtMoney(data.importeTotal)}</Text>
+          <Text style={{ fontWeight: 700 }}>
+            Total: {simbolo}
+            {fmtMoney(data.importeTotal)}
+          </Text>
         </View>
+        {esE && data.monedaCotizacion && (
+          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 2 }}>
+            <Text style={{ fontSize: 9, color: "#555" }}>
+              Equivalente en pesos: $
+              {fmtMoney(data.importeTotal * (data.monedaCotizacion ?? 1))} (cotización{" "}
+              {(data.monedaCotizacion ?? 1).toFixed(4)})
+            </Text>
+          </View>
+        )}
 
         <View style={styles.footer}>
           <View style={styles.caeBox}>
