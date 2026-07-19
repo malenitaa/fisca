@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { IDIOMA_CBTE, MONEDAS, PAISES, TIPO_EXPO } from "@/lib/afip/types";
 import { nuevaFacturaESchema } from "@/lib/validation";
+import { FacturaEmitidaSuccess } from "@/components/factura-emitida-success";
 
 interface ItemRow {
   descripcion: string;
@@ -23,7 +23,6 @@ interface EmitResult {
 }
 
 export function NuevaFacturaEForm() {
-  const router = useRouter();
   const [clienteNombre, setClienteNombre] = useState("");
   const [paisIdx, setPaisIdx] = useState(0);
   const [clienteDomicilio, setClienteDomicilio] = useState("");
@@ -156,42 +155,25 @@ export function NuevaFacturaEForm() {
 
   if (result) {
     return (
-      <div className="rounded-md border border-green-200 bg-green-50 p-5 dark:border-green-900 dark:bg-green-950/30">
-        <p className="mb-1 font-medium text-green-900 dark:text-green-300">
-          Factura E N° {result.puntoVenta.toString().padStart(5, "0")}-
-          {result.numeroComprobante.toString().padStart(8, "0")} autorizada
-        </p>
-        <p className="mb-4 text-sm text-green-800 dark:text-green-400">
-          CAE {result.cae} · vence {result.caeVencimiento} · {result.moneda}
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href={`/api/facturas/${result.facturaId}/pdf`}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
-          >
-            Descargar PDF
-          </a>
-          <button
-            onClick={() => {
-              setResult(null);
-              setItems([{ ...emptyItem }]);
-              setClienteNombre("");
-              setClienteDomicilio("");
-              setClienteIdImpositivo("");
-              setMonedaCotizacion("");
-            }}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-          >
-            Nueva Factura E
-          </button>
-          <button
-            onClick={() => router.push("/facturas/historial")}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-          >
-            Ver historial
-          </button>
-        </div>
-      </div>
+      <FacturaEmitidaSuccess
+        titulo="Factura E"
+        numero={`N° ${String(result.puntoVenta).padStart(5, "0")}-${String(
+          result.numeroComprobante
+        ).padStart(8, "0")}`}
+        cae={result.cae}
+        caeVencimiento={result.caeVencimiento}
+        total={`${moneda.symbol}${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
+        clienteLinea={`${clienteNombre} · ${pais.label}`}
+        facturaId={result.facturaId}
+        onReset={() => {
+          setResult(null);
+          setItems([{ ...emptyItem }]);
+          setClienteNombre("");
+          setClienteDomicilio("");
+          setClienteIdImpositivo("");
+          setMonedaCotizacion("");
+        }}
+      />
     );
   }
 
