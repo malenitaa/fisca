@@ -135,7 +135,7 @@ export function NuevaFacturaEForm() {
       clienteNombre: capitalize(clienteNombre.trim()),
       clientePais: pais.codigoPais,
       clienteCuitPais: pais.cuitPais,
-      clienteDomicilio: clienteDomicilio || undefined,
+      clienteDomicilio: clienteDomicilio.trim(),
       clienteIdImpositivo: clienteIdImpositivo || undefined,
       monedaId,
       monedaCotizacion,
