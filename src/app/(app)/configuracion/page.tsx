@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ConfiguracionForm } from "@/components/configuracion-form";
 import { LogoutButton } from "@/components/logout-button";
+import { UnlockToggle } from "@/components/unlock-toggle";
 
 export default async function PerfilPage() {
   const supabase = await createClient();
@@ -9,11 +10,21 @@ export default async function PerfilPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: config } = await supabase
-    .from("afip_config")
-    .select("cuit, razon_social, punto_venta, ambiente")
-    .eq("user_id", user!.id)
-    .maybeSingle();
+  const [{ data: config }, { data: pinRow }] = await Promise.all([
+    supabase
+      .from("afip_config")
+      .select("cuit, razon_social, punto_venta, ambiente")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+    supabase
+      .from("user_pins")
+      .select("user_id")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+  ]);
+
+  const isAnonymous = user?.is_anonymous === true;
+  const hasPin = !!pinRow;
 
   const existing = config
     ? {
@@ -36,8 +47,31 @@ export default async function PerfilPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Perfil</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{user?.email}</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          {user?.email || (isAnonymous ? "Cuenta sin vincular" : "")}
+        </p>
       </header>
+
+      {isAnonymous && (
+        <Link
+          href="/vincular"
+          className="block rounded-2xl border border-[#003366]/20 bg-[#003366]/5 p-4 dark:border-[#4a90c8]/30 dark:bg-[#4a90c8]/10"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#003366] dark:text-[#7bb0e0]">
+                Vinculá tu cuenta
+              </p>
+              <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
+                Con email y PIN podés recuperar el acceso desde otro dispositivo.
+              </p>
+            </div>
+            <span aria-hidden className="text-lg text-[#003366] dark:text-[#7bb0e0]">
+              ›
+            </span>
+          </div>
+        </Link>
+      )}
 
       <section>
         <h2 className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -50,9 +84,14 @@ export default async function PerfilPage() {
         <ConfiguracionForm existing={existing} />
       </section>
 
-      {/* Cuenta y seguridad (Face ID / PIN / vincular email) va acá como su
-       * propia sección, después de esta — no la mezclamos con el form de
-       * ARCA de arriba. */}
+      {hasPin && (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Seguridad
+          </h2>
+          <UnlockToggle />
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">Más</h2>
