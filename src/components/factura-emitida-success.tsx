@@ -48,25 +48,24 @@ export function FacturaEmitidaSuccess({
   }
 
   return (
-    <div className="flex flex-col items-center py-4">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#003366] text-white dark:bg-[#4a90c8]">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-8 w-8"
+    <div className="flex flex-col items-center py-6">
+      {/* Checkmark en rounded-square azul (matcheando el "container" del logo) */}
+      <svg viewBox="0 0 512 512" className="mb-5 h-16 w-16" aria-hidden>
+        <rect width="512" height="512" rx="115" fill="#003366" />
+        <path
+          d="M148 268 L226 346 L368 180"
           fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
+          stroke="#ffffff"
+          strokeWidth="52"
           strokeLinecap="round"
           strokeLinejoin="round"
-        >
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
+        />
+      </svg>
 
-      <h2 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+      <h2 className="mb-2 text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
         {titulo} autorizada
       </h2>
-      <p className="mb-6 text-sm text-neutral-500 dark:text-neutral-400">{numero}</p>
+      <p className="mb-6 font-mono text-sm text-neutral-500 dark:text-neutral-400">{numero}</p>
 
       <div className="mb-6 w-full max-w-sm divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         <div className="flex items-center justify-between px-4 py-3 text-sm">
@@ -75,7 +74,7 @@ export function FacturaEmitidaSuccess({
         </div>
         <div className="flex items-center justify-between px-4 py-3 text-sm">
           <span className="text-neutral-500 dark:text-neutral-400">CAE</span>
-          <span className="font-mono text-neutral-900 dark:text-neutral-100">{cae}</span>
+          <span className="font-mono text-xs text-neutral-900 dark:text-neutral-100">{cae}</span>
         </div>
         <div className="flex items-center justify-between px-4 py-3 text-sm">
           <span className="text-neutral-500 dark:text-neutral-400">Vence</span>
@@ -89,28 +88,28 @@ export function FacturaEmitidaSuccess({
         </div>
       </div>
 
-      <div className="flex w-full max-w-sm flex-col gap-2">
+      <div className="flex w-full max-w-sm flex-col gap-2.5">
         <button
           type="button"
           onClick={compartir}
           disabled={sharing}
-          className="rounded-lg bg-[#003366] px-4 py-3 text-sm font-medium text-white hover:bg-[#002855] disabled:opacity-50 dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
+          className="rounded-xl bg-[#003366] px-4 py-3.5 text-[15px] font-semibold text-white hover:bg-[#002855] disabled:opacity-50 dark:bg-[#4a90c8] dark:hover:bg-[#3d7ba8]"
         >
           {sharing ? "Compartiendo..." : "Compartir por WhatsApp"}
         </button>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <a
             href={`/api/facturas/${facturaId}/pdf`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="rounded-xl border-[1.5px] border-[#003366] px-4 py-3 text-center text-sm font-semibold text-[#003366] hover:bg-[#003366]/5 dark:border-[#7bb0e0] dark:text-[#7bb0e0]"
           >
             Descargar PDF
           </a>
           <button
             type="button"
             onClick={onReset}
-            className="rounded-lg border border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="rounded-xl border border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
           >
             Nueva factura
           </button>
@@ -118,7 +117,7 @@ export function FacturaEmitidaSuccess({
         <button
           type="button"
           onClick={() => router.push("/facturas/historial")}
-          className="mt-1 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+          className="mt-2 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
         >
           Ver historial ›
         </button>

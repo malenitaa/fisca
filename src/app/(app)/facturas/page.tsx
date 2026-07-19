@@ -34,16 +34,18 @@ export default async function NuevaFacturaPage() {
   return (
     <div>
       <header className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LogoIcon className="h-7 w-7" />
-          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+        <div className="flex items-center gap-2.5">
+          <LogoIcon className="h-6 w-6" />
+          <h1 className="text-[19px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
             Nueva factura
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">{pvLabel}</span>
+          <span className="rounded-md bg-neutral-100 px-2 py-1 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+            {pvLabel}
+          </span>
           {config.ambiente !== "produccion" && (
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+            <span className="rounded-md bg-amber-100 px-2 py-1 text-[11px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
               Homolog.
             </span>
           )}

@@ -1,18 +1,20 @@
-/** Ícono de Fisca: rayo blanco sobre cuadrado azul ARCA redondeado.
- * Usado en el header de la app y como marca visual. */
+/** Marca de Fisca (1c del design): rayo geométrico blanco sobre cuadrado
+ * azul ARCA redondeado. Diseñado para leerse desde 16px hasta 512px. */
 export function LogoIcon({ className = "" }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-md bg-[#003366] text-white dark:bg-[#4a90c8] ${className}`}
+    <svg
+      viewBox="0 0 512 512"
+      className={className}
+      aria-hidden
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4"
-        fill="currentColor"
-        aria-hidden
-      >
-        <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
-      </svg>
-    </span>
+      <rect width="512" height="512" rx="115" fill="#003366" />
+      <path
+        d="M292 96 L172 300 H248 L226 416 L346 212 H270 Z"
+        fill="#ffffff"
+        stroke="#ffffff"
+        strokeWidth="26"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

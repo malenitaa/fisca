@@ -188,7 +188,7 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           No hay comprobantes que coincidan con los filtros.
         </p>
       ) : (
-        <div className="divide-y divide-neutral-200 border-b border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+        <div className="space-y-2">
           {filtered.map((inv) => {
             const esNotaCredito =
               inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C ||
@@ -198,42 +198,47 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
               inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_E;
             const estaAnulada = idsAnulados.has(inv.id);
             const simbolo = monedaSimbolo(inv.moneda);
+            const tipoAbrev = badgeForTipo(inv.cbte_tipo).replace("Factura ", "");
+            const numeroCorto = `${tipoAbrev} ${String(inv.punto_venta).padStart(5, "0")}-${String(
+              inv.numero_comprobante
+            ).padStart(8, "0")}`;
+            const nombreCliente = esE
+              ? inv.cliente_nombre || "Cliente extranjero"
+              : inv.cliente_doc_tipo === 99
+              ? "Consumidor Final"
+              : inv.cliente_nombre
+              ? `${inv.cliente_nombre}${inv.cliente_doc_tipo === 96 ? " · DNI" : ""}`
+              : inv.cliente_doc_nro ?? "Cliente";
             return (
               <div
                 key={inv.id}
-                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                className={`flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950 ${
+                  estaAnulada ? "opacity-60" : ""
+                }`}
               >
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    <span>
-                      {String(inv.punto_venta).padStart(5, "0")}-
-                      {String(inv.numero_comprobante).padStart(8, "0")}
-                    </span>
-                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                      {badgeForTipo(inv.cbte_tipo)}
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <span className="truncate">{nombreCliente}</span>
                     {estaAnulada && (
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                        Anulada
-                      </span>
-                    )}
-                    {inv.ambiente === "homologacion" && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                        Homolog.
+                      <span className="rounded-md border border-red-200 px-1.5 py-0 text-[10px] font-semibold uppercase text-red-600 dark:border-red-900/60 dark:text-red-400">
+                        ANULADA
                       </span>
                     )}
                   </p>
-                  <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                    {inv.fecha_emision} ·{" "}
-                    {esE
-                      ? inv.cliente_nombre || "Cliente extranjero"
-                      : inv.cliente_doc_tipo === 99
-                      ? "Consumidor Final"
-                      : inv.cliente_nombre || inv.cliente_doc_nro}
+                  <p className="mt-1 truncate font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+                    {numeroCorto} · {inv.fecha_emision}
+                    {inv.ambiente === "homologacion" && " · homolog."}
                   </p>
                 </div>
-                <div className="flex items-center justify-between gap-4 sm:justify-end">
-                  <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${
+                      esNotaCredito
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-neutral-900 dark:text-neutral-100"
+                    }`}
+                  >
+                    {esNotaCredito && "−"}
                     {simbolo}
                     {Number(inv.importe_total).toLocaleString("es-AR", {
                       minimumFractionDigits: 2,
@@ -242,9 +247,20 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
                   <a
                     href={`/api/facturas/${inv.id}/pdf`}
                     target="_blank"
-                    className="text-sm font-medium text-[#003366] hover:underline dark:text-[#7bb0e0]"
+                    aria-label="Descargar PDF"
+                    className="text-neutral-400 hover:text-[#003366] dark:hover:text-[#7bb0e0]"
                   >
-                    PDF
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+                    </svg>
                   </a>
                   {!esNotaCredito && !esE && !estaAnulada && (
                     <AnularFacturaButton
