@@ -15,6 +15,10 @@ const PUBLIC_PATHS_STARTSWITH = [
   // Estado de ARCA: pin público sin auth, se muestra tanto en /ayuda como
   // en /login (antes de tener sesión).
   "/api/afip/status",
+  // Apple App Site Association (via rewrite en next.config.ts) — iOS lo
+  // pide sin sesión para habilitar Passkeys / universal links.
+  "/.well-known/apple-app-site-association",
+  "/api/aasa",
 ];
 
 /** Rutas que sirven marketing público (landing) — SEO indexable, sin sesión. */
