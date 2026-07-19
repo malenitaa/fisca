@@ -15,8 +15,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-svh">
       <main
-        className="mx-auto w-full max-w-2xl px-4 pt-4 sm:pt-8"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+        className="mx-auto w-full max-w-2xl px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)",
+        }}
       >
         {children}
       </main>
