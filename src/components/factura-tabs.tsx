@@ -12,7 +12,7 @@ export function FacturaTabs() {
   return (
     <div>
       <div
-        className="mb-6 inline-flex rounded-lg border border-neutral-200 bg-neutral-100 p-0.5 text-sm dark:border-neutral-800 dark:bg-neutral-900"
+        className="mb-5 flex rounded-lg border border-neutral-200 bg-neutral-100 p-0.5 text-sm dark:border-neutral-800 dark:bg-neutral-900"
         role="tablist"
       >
         <button
@@ -20,26 +20,26 @@ export function FacturaTabs() {
           role="tab"
           aria-selected={tipo === "C"}
           onClick={() => setTipo("C")}
-          className={`rounded-md px-3 py-1.5 font-medium transition ${
+          className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
             tipo === "C"
               ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-800 dark:text-neutral-100"
               : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
           }`}
         >
-          Local (C)
+          Local · C
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={tipo === "E"}
           onClick={() => setTipo("E")}
-          className={`rounded-md px-3 py-1.5 font-medium transition ${
+          className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
             tipo === "E"
               ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-800 dark:text-neutral-100"
               : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
           }`}
         >
-          Exportación (E)
+          Exportación · E
         </button>
       </div>
 
