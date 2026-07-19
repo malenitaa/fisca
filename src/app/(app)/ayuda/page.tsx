@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
     pregunta: "¿Cómo genero el certificado de ARCA que me pide Configuración?",
@@ -88,6 +90,12 @@ const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
 export default function AyudaPage() {
   return (
     <div>
+      <Link
+        href="/configuracion"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+      >
+        ‹ Perfil
+      </Link>
       <h1 className="mb-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">Ayuda</h1>
       <p className="mb-6 text-sm text-neutral-500 dark:text-neutral-400">
         Preguntas frecuentes. Si tu duda no está acá, revisá el README del proyecto.
