@@ -43,33 +43,38 @@ export default async function HistorialPage() {
             const esNotaCredito = inv.cbte_tipo === CBTE_TIPO_NOTA_CREDITO_C;
             const estaAnulada = idsAnulados.has(inv.id);
             return (
-              <div key={inv.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {String(inv.punto_venta).padStart(5, "0")}-
-                    {String(inv.numero_comprobante).padStart(8, "0")}
-                    <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                      {esNotaCredito ? "Nota de Crédito C" : "Factura C"}
+              <div
+                key={inv.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <span>
+                      {String(inv.punto_venta).padStart(5, "0")}-
+                      {String(inv.numero_comprobante).padStart(8, "0")}
+                    </span>
+                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                      {esNotaCredito ? "NC C" : "Factura C"}
                     </span>
                     {estaAnulada && (
-                      <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
                         Anulada
                       </span>
                     )}
                     {inv.ambiente === "homologacion" && (
-                      <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                        Homologación
+                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                        Homolog.
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
                     {inv.fecha_emision} ·{" "}
                     {inv.cliente_doc_tipo === 99
                       ? "Consumidor Final"
                       : inv.cliente_nombre || inv.cliente_doc_nro}
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between gap-4 sm:justify-end">
                   <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     $
                     {Number(inv.importe_total).toLocaleString("es-AR", {
