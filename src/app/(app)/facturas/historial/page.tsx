@@ -45,9 +45,11 @@ export default async function HistorialPage() {
       </header>
 
       {!invoices || invoices.length === 0 ? (
-        <p className="py-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          Todavía no emitiste ninguna factura.
-        </p>
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            Todavía no emitiste ninguna factura.
+          </p>
+        </div>
       ) : (
         <HistorialList invoices={invoices} />
       )}

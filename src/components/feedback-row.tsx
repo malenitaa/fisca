@@ -17,7 +17,11 @@ export function FeedbackRow() {
           ›
         </span>
       </button>
-      <FeedbackModal open={open} onClose={() => setOpen(false)} />
+      <FeedbackModal
+        open={open}
+        onClose={() => setOpen(false)}
+        reason="Contanos tu queja o sugerencia"
+      />
     </>
   );
 }

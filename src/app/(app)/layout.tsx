@@ -30,7 +30,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       <UnlockGate>
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="mx-auto w-full max-w-2xl px-4 pt-4">{children}</div>
+          <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 pt-4">
+            {children}
+          </div>
         </main>
         <BottomTabs />
         <ShakeToFeedback />
