@@ -24,9 +24,11 @@ export function UnlockToggle() {
     <div className="rounded-md border border-neutral-200 dark:border-neutral-800">
       <div className="flex items-center justify-between px-4 py-3">
         <div>
-          <p className="text-sm text-neutral-900 dark:text-neutral-100">Pedir PIN al abrir</p>
+          <p className="text-sm text-neutral-900 dark:text-neutral-100">
+            Pedir Face ID o PIN al abrir
+          </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Se pide cada 15 minutos de inactividad.
+            Se pide cada vez que abrís la app.
           </p>
         </div>
         <button
