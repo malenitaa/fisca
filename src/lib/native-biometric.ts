@@ -44,6 +44,11 @@ export function isNativeBiometricEnrolled(): boolean {
   return window.localStorage.getItem(ENROLLED_KEY) === "true";
 }
 
+export function clearNativeBiometricEnrollment(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(ENROLLED_KEY);
+}
+
 /** Forzamos un prompt real y solo marcamos como enrolado si pasa. */
 export async function enrollNativeBiometric(): Promise<void> {
   if (!isNative()) {
