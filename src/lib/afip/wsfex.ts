@@ -1,6 +1,6 @@
 import { AFIP_ENDPOINTS, type Ambiente } from "./config";
 import { AfipError } from "./errors";
-import { callWsfeSoap } from "./soap";
+import { callWsfeSoap, xmlEscape } from "./soap";
 import { CBTE_TIPO_FACTURA_E, type FacturaItem } from "./types";
 
 /** WSFEXv1 devuelve un único bloque `<FEXErr><ErrCode>N</ErrCode><ErrMsg>...</ErrMsg></FEXErr>`
@@ -43,15 +43,6 @@ function todayYYYYMMDD(): string {
 
 function fromAfipDate(afipDate: string): string {
   return `${afipDate.slice(0, 4)}-${afipDate.slice(4, 6)}-${afipDate.slice(6, 8)}`;
-}
-
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 export function importeTotalE(items: FacturaItem[]): number {

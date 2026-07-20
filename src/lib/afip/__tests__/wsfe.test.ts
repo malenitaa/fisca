@@ -224,4 +224,36 @@ describe("solicitarCae", () => {
     expect(body).toContain("<ar:PtoVta>1</ar:PtoVta>");
     expect(body).toContain("<ar:Nro>43</ar:Nro>");
   });
+
+  it("escapa caracteres XML en docNro (defensa en profundidad contra XML injection)", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      factura: { ...baseFactura, docTipo: 80, docNro: `1<ar:Injected>&"'</ar:Injected>` },
+      importeTotal: 1000,
+    });
+
+    const body = getBody();
+    expect(body).not.toContain("<ar:Injected>");
+    expect(body).toContain("&lt;ar:Injected&gt;&amp;&quot;&apos;&lt;/ar:Injected&gt;");
+  });
 });

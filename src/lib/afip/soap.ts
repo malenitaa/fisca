@@ -121,6 +121,20 @@ export async function callWsfeSoap(params: {
   return body as Record<string, unknown>;
 }
 
+/** Escapa texto para insertarlo en un nodo XML. Todo campo con texto
+ * ingresado por la usuaria (nombre de cliente, domicilio, docNro, etc.)
+ * tiene que pasar por acá antes de interpolarse en el SOAP body — si no,
+ * un `&`/`<`/`>` en el input rompe la estructura del XML (o peor, permite
+ * inyectar nodos ajenos al pedido). */
+export function xmlEscape(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 /** Normaliza un campo que puede venir como objeto único o array (fast-xml-parser). */
 export function asArray<T>(value: T | T[] | undefined | null): T[] {
   if (value === undefined || value === null) return [];

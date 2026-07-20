@@ -1,6 +1,6 @@
 import { AFIP_ENDPOINTS, type Ambiente } from "./config";
 import { AfipError } from "./errors";
-import { asArray, callWsfeSoap, formatAfipIssues } from "./soap";
+import { asArray, callWsfeSoap, formatAfipIssues, xmlEscape } from "./soap";
 import { CBTE_TIPO_FACTURA_C, type FacturaItem, type NuevaFacturaInput } from "./types";
 
 export interface ComprobanteAsociado {
@@ -158,7 +158,7 @@ export async function solicitarCae(params: {
         <ar:FECAEDetRequest>
           <ar:Concepto>${factura.concepto}</ar:Concepto>
           <ar:DocTipo>${factura.docTipo}</ar:DocTipo>
-          <ar:DocNro>${factura.docNro}</ar:DocNro>
+          <ar:DocNro>${xmlEscape(factura.docNro)}</ar:DocNro>
           <ar:CbteDesde>${numeroComprobante}</ar:CbteDesde>
           <ar:CbteHasta>${numeroComprobante}</ar:CbteHasta>
           <ar:CbteFch>${fechaEmision}</ar:CbteFch>
