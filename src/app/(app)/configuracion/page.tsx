@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ConfiguracionForm } from "@/components/configuracion-form";
 import { LogoutButton } from "@/components/logout-button";
 import { UnlockToggle } from "@/components/unlock-toggle";
+import { BiometricEnrollButton } from "@/components/biometric-enroll-button";
 
 export default async function PerfilPage() {
   const supabase = await createClient();
@@ -85,11 +86,12 @@ export default async function PerfilPage() {
       </section>
 
       {hasPin ? (
-        <section>
+        <section className="space-y-2">
           <h2 className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
             Seguridad
           </h2>
           <UnlockToggle />
+          <BiometricEnrollButton />
         </section>
       ) : !isAnonymous ? (
         <section>
