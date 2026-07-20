@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -68,20 +67,9 @@ export default function LoginPage() {
         )}
 
         {status === "ratelimit" && (
-          <div className="space-y-4">
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-              <p className="mb-2 font-medium">Se llegó al límite de mails por ahora.</p>
-              <p>
-                Reintentá en un rato — o entrá sin email creando una cuenta que después
-                podés vincular.
-              </p>
-            </div>
-            <Link
-              href="/signup"
-              className="block rounded-xl bg-[#003366] px-4 py-3 text-center text-sm font-semibold text-white dark:bg-[#4a90c8]"
-            >
-              Entrar sin email
-            </Link>
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+            <p className="mb-2 font-medium">Se llegó al límite de mails por ahora.</p>
+            <p>Reintentá en un rato.</p>
           </div>
         )}
 
@@ -106,12 +94,6 @@ export default function LoginPage() {
             {status === "error" && (
               <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
             )}
-            <Link
-              href="/signup"
-              className="mt-4 block text-center text-sm font-medium text-neutral-500 dark:text-neutral-400"
-            >
-              O entrar sin email
-            </Link>
           </form>
         )}
       </div>
