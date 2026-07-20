@@ -37,7 +37,7 @@ export default async function PerfilPage() {
   // resto de Perfil (Ayuda/cerrar sesión), la persona ni tiene cuenta
   // vinculada aún.
   if (!existing) {
-    return <ConfiguracionForm existing={null} />;
+    return <ConfiguracionForm existing={null} isAnonymous={isAnonymous} />;
   }
 
   return (

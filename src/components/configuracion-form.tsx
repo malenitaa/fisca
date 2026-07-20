@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { clearAllLocalUnlockState } from "@/lib/unlock";
 
 interface ExistingConfig {
   cuit: string;
@@ -31,17 +32,27 @@ async function readFileAsText(file: File): Promise<string> {
   });
 }
 
-export function ConfiguracionForm({ existing }: { existing: ExistingConfig | null }) {
-  return existing ? <EditarConfiguracion existing={existing} /> : <VincularArcaWizard />;
+export function ConfiguracionForm({
+  existing,
+  isAnonymous = false,
+}: {
+  existing: ExistingConfig | null;
+  isAnonymous?: boolean;
+}) {
+  return existing ? (
+    <EditarConfiguracion existing={existing} />
+  ) : (
+    <VincularArcaWizard isAnonymous={isAnonymous} />
+  );
 }
 
 type Modo = "elegir" | "generar" | "subir";
 
-function VincularArcaWizard() {
+function VincularArcaWizard({ isAnonymous }: { isAnonymous: boolean }) {
   const [modo, setModo] = useState<Modo>("elegir");
 
   if (modo === "elegir") {
-    return <ElegirModo onModo={setModo} />;
+    return <ElegirModo onModo={setModo} isAnonymous={isAnonymous} />;
   }
   if (modo === "generar") {
     return <GenerarCsrWizard onVolver={() => setModo("elegir")} />;
@@ -49,17 +60,46 @@ function VincularArcaWizard() {
   return <SubirCertificadoWizard onVolver={() => setModo("elegir")} />;
 }
 
-function ElegirModo({ onModo }: { onModo: (m: Modo) => void }) {
+function ElegirModo({
+  onModo,
+  isAnonymous,
+}: {
+  onModo: (m: Modo) => void;
+  isAnonymous: boolean;
+}) {
   const router = useRouter();
+
+  // "Atrás" solo tiene sentido para el flow de onboarding recién iniciado
+  // (sesión anónima creada por /signup). Si la usuaria ya tiene email
+  // vinculado pero cayó acá sin config ARCA, no queremos hacerle un signOut
+  // silencioso — para ese caso queda el "Cerrar sesión" explícito abajo.
+  async function volverALanding() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    clearAllLocalUnlockState();
+    router.push("/");
+    router.refresh();
+  }
+
   async function cerrarSesion() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearAllLocalUnlockState();
     router.push("/login");
     router.refresh();
   }
 
   return (
     <div className="space-y-4">
+      {isAnonymous && (
+        <button
+          type="button"
+          onClick={volverALanding}
+          className="-ml-1 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+        >
+          <span aria-hidden>‹</span> Volver
+        </button>
+      )}
       <div>
         <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
           VINCULAR CON ARCA
