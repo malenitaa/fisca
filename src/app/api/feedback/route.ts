@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import { badRequest, internalError, tooMany, unauthorized } from "@/lib/api-errors";
 import { rateLimit } from "@/lib/rate-limit";
@@ -32,5 +33,36 @@ export async function POST(request: Request) {
   });
 
   if (error) return internalError(error);
+
+  // Envío por email best-effort: si Resend falla o no está configurado, el
+  // feedback ya quedó en la DB y devolvemos 200 igual — no queremos hacer
+  // fallar el request de la usuaria por un problema del proveedor de mail.
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.FEEDBACK_EMAIL_TO;
+  const from = process.env.FEEDBACK_EMAIL_FROM || "onboarding@resend.dev";
+  if (apiKey && to) {
+    try {
+      const resend = new Resend(apiKey);
+      const identidad = user.email || (user.is_anonymous ? "usuaria anónima" : user.id);
+      await resend.emails.send({
+        from,
+        to,
+        subject: `Fisca — feedback de ${identidad}`,
+        text: [
+          `De: ${identidad}`,
+          `User ID: ${user.id}`,
+          path ? `Pantalla: ${path}` : null,
+          userAgent ? `User-Agent: ${userAgent}` : null,
+          "",
+          message,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+    } catch (err) {
+      console.error("[feedback] no se pudo enviar email:", err);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
