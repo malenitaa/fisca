@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { ConfiguracionForm } from "@/components/configuracion-form";
 import { LogoutButton } from "@/components/logout-button";
 import { UnlockToggle } from "@/components/unlock-toggle";
 
 export default async function PerfilPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCurrentUser();
 
   const [{ data: config }, { data: pinRow }] = await Promise.all([
     supabase

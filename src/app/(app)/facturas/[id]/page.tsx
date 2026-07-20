@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import {
   CBTE_TIPO_FACTURA_E,
   CBTE_TIPO_NOTA_CREDITO_C,
@@ -33,10 +33,7 @@ function monedaSimbolo(value?: string): string {
 
 export default async function FacturaDetallePage({ params }: Params) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCurrentUser();
 
   const { data: invoice } = await supabase
     .from("invoices")

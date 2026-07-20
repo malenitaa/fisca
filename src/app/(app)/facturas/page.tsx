@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { FacturaTabs } from "@/components/factura-tabs";
 import { MonotributoReminder } from "@/components/monotributo-reminder";
 import { periodoActual, periodoLabel } from "@/lib/monotributo";
 import { LogoIcon } from "@/components/logo";
 
 export default async function NuevaFacturaPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCurrentUser();
 
   const { data: config } = await supabase
     .from("afip_config")

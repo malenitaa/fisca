@@ -1,12 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/user";
 import { HistorialList } from "@/components/historial-list";
 import { PullToRefresh } from "@/components/pull-to-refresh";
 
 export default async function HistorialPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCurrentUser();
 
   const { data: invoices } = await supabase
     .from("invoices")
