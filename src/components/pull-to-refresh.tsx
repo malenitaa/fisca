@@ -52,7 +52,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   return (
     <div
       ref={wrapperRef}
-      className="flex min-h-full flex-col"
+      className="flex flex-1 flex-col"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

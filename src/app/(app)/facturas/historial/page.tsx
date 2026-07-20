@@ -42,7 +42,7 @@ export default async function HistorialPage() {
       </header>
 
       {!invoices || invoices.length === 0 ? (
-        <div className="flex min-h-[60vh] flex-1 items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
             Todavía no emitiste ninguna factura.
           </p>

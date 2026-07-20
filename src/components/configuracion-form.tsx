@@ -6,6 +6,10 @@ import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { clearAllLocalUnlockState } from "@/lib/unlock";
 
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean;
+}
+
 interface ExistingConfig {
   cuit: string;
   razonSocial: string;
@@ -226,12 +230,31 @@ function GenerarCsrWizard({ onVolver }: { onVolver: () => void }) {
     }
   }
 
-  function descargarCsr() {
-    const blob = new Blob([csrPem], { type: "application/x-pem-file" });
-    const url = URL.createObjectURL(blob);
+  /** El atributo `download` de un <a> no hace nada dentro del WKWebView de
+   * Capacitor (no tiene gestor de descargas) — el toque no pasaba nada,
+   * por eso "no funcionaba". En la app nativa se comparte como archivo
+   * (el share sheet de iOS trae "Guardar en archivos"); en browser
+   * normal, el <a download> de siempre. */
+  async function descargarCsr() {
+    const filename = `fisca-${cuit.replace(/\D/g, "")}.csr`;
+    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+    const isNative = cap?.isNativePlatform?.() ?? false;
+    const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+    const file = new File([csrPem], filename, { type: "application/x-pem-file" });
+
+    if (isNative && nav.share && nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: filename });
+      } catch {
+        // Cancelado — no-op.
+      }
+      return;
+    }
+
+    const url = URL.createObjectURL(new Blob([csrPem], { type: "application/x-pem-file" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fisca-${cuit.replace(/\D/g, "")}.csr`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
