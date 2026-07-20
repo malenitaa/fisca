@@ -4,108 +4,102 @@ import { FeedbackRow } from "@/components/feedback-row";
 
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
-    pregunta: "¿Qué factura tengo que emitir?",
+    pregunta: "¿Cómo anulo una factura?",
     respuesta: (
       <>
-        Depende de dónde está tu cliente:
-        <ul className="mt-2 ml-4 list-disc space-y-1">
-          <li>
-            <strong>Factura C</strong>: cliente en Argentina (empresa, particular
-            o monotributista). En pesos.
-          </li>
-          <li>
-            <strong>Factura E</strong>: cliente en el exterior (Deel, freelance
-            para empresas extranjeras, exportación). En la moneda que te pagan
-            (USD casi siempre), con la cotización tipo <strong>vendedor</strong>{" "}
-            del BNA del día. Legalmente el comprobante es en pesos al tipo de
-            cambio del día — la app lo calcula automático.
-          </li>
-        </ul>
+        En Historial, tocá la factura y después &quot;Anular&quot;. Emite una
+        Nota de Crédito con su propio CAE que ARCA asocia a la original. No
+        se puede borrar una factura con CAE — es un comprobante fiscal real.
       </>
     ),
   },
   {
-    pregunta: "¿Hace falta habilitación aparte para emitir Factura E?",
+    pregunta: "¿Qué pasa si me paso de categoría?",
     respuesta: (
       <>
-        Sí. Al ser monotributista se puede emitir Factura E, pero antes hay que:
-        <ul className="mt-2 ml-4 list-disc space-y-1">
-          <li>
-            Dar de alta el punto de venta específicamente para{" "}
-            <strong>&quot;Factura Electrónica - Exportación&quot;</strong>{" "}
-            (webservice) en el portal de ARCA. Es un tipo distinto al de la Factura C.
-          </li>
-          <li>
-            Habilitar el certificado digital para el servicio{" "}
-            <strong>&quot;ws - Facturación Electrónica de Exportación&quot;</strong>{" "}
-            (wsfex) en el Administrador de Relaciones. Es una relación aparte de la
-            que usa la Factura C.
-          </li>
-        </ul>
-        Los dos pasos se hacen una sola vez y son gratis — sin eso, ARCA rechaza la
-        Factura E incluso si el resto está bien.
+        El monotributo tiene topes de facturación por categoría, revisados
+        cada 6 meses. Si te pasás, hay que recategorizarse en el portal de
+        ARCA (en enero o julio). La app te muestra cuánto llevás facturado
+        en el mes en el resumen de Historial para que puedas seguirlo.
       </>
     ),
   },
   {
-    pregunta: "¿Cómo genero el certificado de ARCA que me pide Configuración?",
+    pregunta: "¿Cuándo uso Factura C o E?",
     respuesta: (
       <>
-        Se genera una sola vez en el portal de ARCA, con tu Clave Fiscal. Hay una guía paso a
-        paso completa (con los comandos de OpenSSL) en el{" "}
-        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">README</code> del
-        proyecto, sección &quot;Generar el certificado digital en el portal de ARCA&quot;. En
-        criollo: generás un pedido de certificado (CSR) en tu computadora, lo subís al servicio
-        WSASS (para homologación) o Administración de Certificados Digitales (para producción),
-        y ARCA te devuelve el archivo <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">.crt</code> que
-        subís acá junto con tu clave privada.
+        <strong>C</strong> para clientes en Argentina, en pesos.{" "}
+        <strong>E</strong> para clientes en el exterior (Deel, freelance
+        para empresas extranjeras, exportación de servicios).
       </>
     ),
   },
   {
-    pregunta: "ARCA me rechazó la factura, ¿qué hago?",
+    pregunta: "¿Cómo facturo en dólares?",
     respuesta: (
       <>
-        La app te muestra el motivo real que devuelve ARCA (no un error genérico), en el cartel
-        rojo que aparece al emitir. Los más comunes:
+        Con Factura E, pestaña <strong>Exportación (E)</strong> arriba del
+        formulario. Cargás la cotización tipo <strong>vendedor</strong> del
+        BNA del día y los ítems en dólares — la app pasa a pesos con esa
+        cotización, que es lo que ARCA guarda en el comprobante.
+        <br />
+        <br />
+        Para emitir Factura E hace falta tener el punto de venta habilitado
+        para &quot;Factura Electrónica - Exportación&quot; y el certificado
+        asociado al servicio <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">wsfex</code> en
+        el portal de ARCA.
+      </>
+    ),
+  },
+  {
+    pregunta: "¿Fisca guarda mi clave fiscal?",
+    respuesta: (
+      <>
+        No. La clave fiscal la usás una sola vez en el portal de ARCA para
+        generar tu certificado digital — Fisca nunca la ve. Lo que sí
+        guardamos es el certificado y la clave privada del certificado,
+        cifrados. Nunca se muestran de nuevo en pantalla y no pasan por
+        ningún servidor de terceros — solo viajan a ARCA por HTTPS.
+      </>
+    ),
+  },
+  {
+    pregunta: "¿ARCA me rechazó una factura, qué hago?",
+    respuesta: (
+      <>
+        La app te muestra el motivo real de ARCA en el cartel rojo al
+        emitir. Los más comunes:
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            <strong>Condición IVA receptor obligatoria</strong>: elegí una opción en el campo
-            &quot;Condición IVA del cliente&quot;.
+            <strong>Condición IVA receptor obligatoria</strong>: elegí una
+            opción en &quot;Condición IVA del cliente&quot;.
           </li>
           <li>
-            <strong>CUIT no autorizado / no incluido en Token</strong>: el certificado no está
-            asociado al servicio <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">wsfe</code> para
-            ese CUIT, o el CUIT en Configuración no coincide con el del certificado.
+            <strong>CUIT no autorizado</strong>: el certificado no está
+            asociado al servicio{" "}
+            <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">wsfe</code>,
+            o el CUIT en Configuración no coincide con el del certificado.
           </li>
           <li>
-            <strong>Punto de venta no habilitado</strong>: hay que darlo de alta como punto de
-            venta de tipo &quot;Factura Electrónica - Web Services&quot; en ARCA antes de poder
-            facturar (y estar inscripto como monotributista).
+            <strong>Punto de venta no habilitado</strong>: hay que darlo de
+            alta como &quot;Factura Electrónica - Web Services&quot; en ARCA.
           </li>
         </ul>
       </>
     ),
   },
   {
-    pregunta: "Facturé mal (importe equivocado, dos veces, etc.), ¿puedo borrarla?",
+    pregunta: "¿Cómo genero el certificado de ARCA?",
     respuesta: (
       <>
-        No — una vez que ARCA te da el CAE, es un comprobante fiscal real y no se puede eliminar.
-        Lo que corresponde es emitir una <strong>Nota de Crédito</strong> que la anula: en el
-        Historial, al lado de la factura, tocá &quot;Anular&quot;. Es otro comprobante con su
-        propio CAE, que ARCA asocia a la factura original.
-      </>
-    ),
-  },
-  {
-    pregunta: "¿Es seguro cargar mi certificado y clave privada acá?",
-    respuesta: (
-      <>
-        El certificado y la clave privada se guardan cifrados y nunca se muestran de nuevo en
-        pantalla ni se envían al navegador. A diferencia de otras integraciones con ARCA, tu
-        clave privada no pasa por ningún servidor de terceros — solo viaja, cifrada por HTTPS,
-        directo a los servidores de ARCA.
+        Se genera una sola vez con tu Clave Fiscal en el portal de ARCA. La
+        guía paso a paso, con los comandos de OpenSSL, está en el{" "}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">README</code>{" "}
+        del proyecto. En criollo: generás un CSR en tu compu, lo subís al
+        servicio WSASS (homologación) o Administración de Certificados
+        Digitales (producción), y ARCA te devuelve un{" "}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">.crt</code>{" "}
+        que subís acá con tu clave privada.
       </>
     ),
   },

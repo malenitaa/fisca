@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LogoBolt } from "@/components/logo";
+import { clearAllLocalUnlockState } from "@/lib/unlock";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -13,6 +14,11 @@ export default function SignupPage() {
 
   useEffect(() => {
     async function crearCuenta() {
+      // Cuenta nueva: garantizamos que no arrastramos el toggle de
+      // bloqueo ni el flag biométrico de una sesión previa cerrada
+      // sin logout formal. Si no limpiamos, (app) le pediría un PIN
+      // que todavía no configuró.
+      clearAllLocalUnlockState();
       const supabase = createClient();
       const { error } = await supabase.auth.signInAnonymously();
       if (error) {

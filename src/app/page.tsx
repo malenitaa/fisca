@@ -108,7 +108,7 @@ export default async function RootPage() {
           href="/signup"
           className="block rounded-2xl bg-white px-6 py-4 text-center text-[16px] font-semibold text-[#003366] active:bg-white/90"
         >
-          Crear cuenta
+          Vincular con ARCA
         </Link>
         <Link
           href="/login"

@@ -57,3 +57,15 @@ export function isCurrentlyUnlocked(): boolean {
 export function clearUnlock(): void {
   unlocked = false;
 }
+
+/** Limpieza total del estado local de bloqueo. Se usa cuando cambia el
+ * usuario (login/logout/signup) para no arrastrar el toggle y el flag
+ * biométrico de una cuenta previa a otra que aún no configuró PIN. Sin
+ * esto, la sesión nueva llegaría a (app)/ con el gate encendido y pediría
+ * un PIN que no existe en la DB. */
+export function clearAllLocalUnlockState(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KEY_ENABLED);
+  window.localStorage.removeItem("fisca.biometric.enrolled");
+  unlocked = false;
+}
