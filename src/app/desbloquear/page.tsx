@@ -19,6 +19,10 @@ export default function DesbloquearPage() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/facturas";
+  // Cuando viene desde el callback de magic link, el gate corre igual
+  // aunque la preferencia local "Bloquear al abrir la app" esté OFF —
+  // es una capa extra sobre el auth por email, no la del toggle.
+  const fromLogin = params.get("fromLogin") === "1";
 
   const [step, setStep] = useState<Step>("biometric");
   const [pin, setPin] = useState("");
@@ -30,12 +34,19 @@ export default function DesbloquearPage() {
   const [label, setLabel] = useState("Face ID");
 
   useEffect(() => {
-    if (!isUnlockEnabled()) {
+    if (!fromLogin && !isUnlockEnabled()) {
       router.replace(next);
       return;
     }
     getBiometryLabel().then(setLabel);
-    tryBiometric();
+    // Post-login vamos directo al PIN — el email magic-link ya autenticó,
+    // no hace falta el atajo biométrico en ese punto y evita saltar el
+    // paso de tipear el PIN, que es el segundo factor.
+    if (fromLogin) {
+      setStep("pin");
+    } else {
+      tryBiometric();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
