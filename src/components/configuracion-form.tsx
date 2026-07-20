@@ -344,6 +344,13 @@ function GenerarCsrWizard({ onVolver }: { onVolver: () => void }) {
     return (
       <div className="space-y-4">
         <div>
+          <button
+            type="button"
+            onClick={() => setPaso(1)}
+            className="mb-3 text-xs font-medium text-neutral-500 dark:text-neutral-400"
+          >
+            ← Volver
+          </button>
           <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
             PASO 2 DE 3
           </p>
@@ -404,6 +411,13 @@ function GenerarCsrWizard({ onVolver }: { onVolver: () => void }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
+        <button
+          type="button"
+          onClick={() => setPaso(2)}
+          className="mb-3 text-xs font-medium text-neutral-500 dark:text-neutral-400"
+        >
+          ← Volver
+        </button>
         <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
           PASO 3 DE 3
         </p>
@@ -605,6 +619,13 @@ function SubirCertificadoWizard({ onVolver }: { onVolver: () => void }) {
   return (
     <form onSubmit={confirmar} className="space-y-4">
       <div>
+        <button
+          type="button"
+          onClick={() => setPaso(1)}
+          className="mb-3 text-xs font-medium text-neutral-500 dark:text-neutral-400"
+        >
+          ← Volver
+        </button>
         <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
           PASO 2 DE 2
         </p>
