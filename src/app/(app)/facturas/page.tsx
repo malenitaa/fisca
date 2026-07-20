@@ -22,7 +22,7 @@ export default async function NuevaFacturaPage() {
   // confuso porque el usuario tocaba "Facturar" y aterrizaba en "Perfil").
   if (!config) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
         <LogoIcon className="mb-4 h-14 w-14" />
         <h1 className="mb-2 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
           Falta configurar tu cuenta

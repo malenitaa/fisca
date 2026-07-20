@@ -50,7 +50,13 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const spinnerOpacity = isPending ? 1 : Math.min(1, pullDistance / PULL_THRESHOLD);
 
   return (
-    <div ref={wrapperRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+    <div
+      ref={wrapperRef}
+      className="flex min-h-full flex-col"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <div
         className="flex items-center justify-center overflow-hidden transition-[height] duration-200 ease-out"
         style={{ height: spinnerSize }}

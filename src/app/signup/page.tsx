@@ -53,19 +53,16 @@ export default function SignupPage() {
   }
 
   return (
-    <main
-      className="fixed inset-0 h-dvh flex flex-col items-center justify-center bg-[#003366] text-white"
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
-    >
+    <main className="fixed inset-0 h-dvh flex flex-col items-center justify-center bg-[#003366] text-white">
       <div style={{ animation: "fisca-splash-in .9s cubic-bezier(.2,.8,.2,1) both" }}>
         <LogoBolt className="h-16 w-16" pulse />
       </div>
       <p
-        className="absolute bottom-14 text-sm text-[#7bb0e0]"
-        style={{ animation: "fisca-splash-in .9s .15s cubic-bezier(.2,.8,.2,1) both" }}
+        className="absolute left-0 right-0 text-center text-sm text-[#7bb0e0]"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom) + 56px)",
+          animation: "fisca-splash-in .9s .15s cubic-bezier(.2,.8,.2,1) both",
+        }}
       >
         Preparando tu cuenta…
       </p>
