@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import {
   BiometricAuth,
   BiometryError,
+  BiometryType,
 } from "@aparajita/capacitor-biometric-auth";
 
 /**
@@ -39,6 +40,33 @@ export async function nativeBiometricSupportedByDevice(): Promise<boolean> {
   }
 }
 
+export async function getNativeBiometryLabel(): Promise<string> {
+  if (!isNative()) return "Face ID";
+  try {
+    const result = await BiometricAuth.checkBiometry();
+    return biometryTypeLabel(result.biometryType);
+  } catch {
+    return "Face ID";
+  }
+}
+
+function biometryTypeLabel(type: BiometryType): string {
+  switch (type) {
+    case BiometryType.faceId:
+      return "Face ID";
+    case BiometryType.touchId:
+      return "Touch ID";
+    case BiometryType.fingerprintAuthentication:
+      return "Huella";
+    case BiometryType.faceAuthentication:
+      return "Reconocimiento facial";
+    case BiometryType.irisAuthentication:
+      return "Escaneo de iris";
+    default:
+      return "Face ID";
+  }
+}
+
 export function isNativeBiometricEnrolled(): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(ENROLLED_KEY) === "true";
@@ -52,13 +80,15 @@ export function clearNativeBiometricEnrollment(): void {
 /** Forzamos un prompt real y solo marcamos como enrolado si pasa. */
 export async function enrollNativeBiometric(): Promise<void> {
   if (!isNative()) {
-    throw new Error("Face ID no disponible fuera de la app.");
+    throw new Error("La biometría no está disponible fuera de la app.");
   }
   try {
     await BiometricAuth.authenticate({
-      reason: "Activá el reconocimiento facial para entrar más rápido.",
+      reason: "Activá el desbloqueo biométrico para entrar más rápido.",
       cancelTitle: "Cancelar",
       iosFallbackTitle: "Usar código",
+      androidTitle: "Activar desbloqueo biométrico",
+      androidSubtitle: "Entrás sin escribir el PIN",
       allowDeviceCredential: false,
     });
     window.localStorage.setItem(ENROLLED_KEY, "true");
@@ -75,9 +105,11 @@ export async function authenticateNativeBiometric(): Promise<boolean> {
   if (!isNativeBiometricEnrolled()) return false;
   try {
     await BiometricAuth.authenticate({
-      reason: "Ingresá a Fisca con tu cara.",
+      reason: "Ingresá a Fisca.",
       cancelTitle: "Cancelar",
       iosFallbackTitle: "Usar PIN",
+      androidTitle: "Ingresá a Fisca",
+      androidSubtitle: "Usá tu biometría o el PIN",
       allowDeviceCredential: false,
     });
     return true;

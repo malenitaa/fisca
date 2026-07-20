@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { markUnlocked, setUnlockEnabled } from "@/lib/unlock";
-import { isBiometricSupported, registerBiometric } from "@/lib/biometric";
+import { isBiometricSupported, registerBiometric, getBiometryLabel } from "@/lib/biometric";
 
 type Step = "pin" | "confirm" | "faceid" | "done";
 
@@ -15,6 +15,11 @@ export default function ConfigurarPinPage() {
   const [pinConfirm, setPinConfirm] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [biometryLabel, setBiometryLabel] = useState("Face ID");
+
+  useEffect(() => {
+    getBiometryLabel().then(setBiometryLabel);
+  }, []);
 
   function nextFromPin(e: FormEvent) {
     e.preventDefault();
@@ -61,7 +66,7 @@ export default function ConfigurarPinPage() {
     try {
       await registerBiometric();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo activar Face ID.");
+      setError(err instanceof Error ? err.message : `No se pudo activar ${biometryLabel}.`);
     }
     setSubmitting(false);
     setStep("done");
@@ -163,7 +168,7 @@ export default function ConfigurarPinPage() {
               </div>
               <div>
                 <h1 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  ¿Activar Face ID?
+                  ¿Activar {biometryLabel}?
                 </h1>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   Entrás sin escribir el PIN. El PIN queda de respaldo.
@@ -176,7 +181,7 @@ export default function ConfigurarPinPage() {
                 disabled={submitting}
                 className="w-full rounded-xl bg-[#003366] px-3 py-3 text-[15px] font-semibold text-white disabled:opacity-40 dark:bg-[#4a90c8]"
               >
-                {submitting ? "Activando..." : "Activar Face ID"}
+                {submitting ? "Activando..." : `Activar ${biometryLabel}`}
               </button>
               <button
                 type="button"

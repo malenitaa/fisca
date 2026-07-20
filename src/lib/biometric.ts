@@ -11,6 +11,8 @@ import {
   enrollNativeBiometric,
   authenticateNativeBiometric,
   isNativeBiometricEnrolled,
+  clearNativeBiometricEnrollment,
+  getNativeBiometryLabel,
 } from "./native-biometric";
 
 /**
@@ -57,4 +59,17 @@ export async function authenticateBiometric(): Promise<boolean> {
   if (strategy === "native") return authenticateNativeBiometric();
   if (strategy === "webauthn") return authenticateWithPasskey();
   return false;
+}
+
+/** Label del método biométrico del dispositivo actual (Face ID / Huella / etc.),
+ * para usar en copies de UI. En web/PWA cae a "Face ID" porque WebAuthn no
+ * expone qué autenticador se usa. */
+export async function getBiometryLabel(): Promise<string> {
+  const strategy = getStrategy();
+  if (strategy === "native") return getNativeBiometryLabel();
+  return "Face ID";
+}
+
+export function disableBiometricShortcut(): void {
+  clearNativeBiometricEnrollment();
 }

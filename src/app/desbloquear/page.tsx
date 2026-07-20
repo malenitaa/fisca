@@ -7,9 +7,13 @@ import {
   authenticateBiometric,
   isBiometricSupported,
   hasBiometricEnrolled,
+  getBiometryLabel,
 } from "@/lib/biometric";
+import { SplashView } from "@/components/splash-view";
 
-type Step = "biometric" | "pin" | "recover" | "recovered";
+type Step = "biometric" | "biometric-retry" | "pin" | "recover" | "recovered";
+
+const MAX_BIOMETRIC_ATTEMPTS = 3;
 
 export default function DesbloquearPage() {
   const router = useRouter();
@@ -22,13 +26,15 @@ export default function DesbloquearPage() {
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [recoveredEmail, setRecoveredEmail] = useState("");
+  const [biometricAttempts, setBiometricAttempts] = useState(0);
+  const [label, setLabel] = useState("Face ID");
 
   useEffect(() => {
-    // Si el user no tenía unlock activo, redirigimos directo — no hay gate.
     if (!isUnlockEnabled()) {
       router.replace(next);
       return;
     }
+    getBiometryLabel().then(setLabel);
     tryBiometric();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -43,13 +49,20 @@ export default function DesbloquearPage() {
       setStep("pin");
       return;
     }
+    setStep("biometric");
     const ok = await authenticateBiometric();
     if (ok) {
       markUnlocked();
       router.replace(next);
       return;
     }
-    setStep("pin");
+    const nextAttempt = biometricAttempts + 1;
+    setBiometricAttempts(nextAttempt);
+    if (nextAttempt >= MAX_BIOMETRIC_ATTEMPTS) {
+      setStep("pin");
+      return;
+    }
+    setStep("biometric-retry");
   }
 
   async function submitPin(e: FormEvent) {
@@ -91,6 +104,13 @@ export default function DesbloquearPage() {
     setStep("recovered");
   }
 
+  // Step "biometric": el splash sigue visible mientras se dispara el
+  // prompt nativo de Face ID / Huella. Se ve como una sola pantalla
+  // continua de carga con el prompt encima, sin flash intermedio.
+  if (step === "biometric") {
+    return <SplashView />;
+  }
+
   return (
     <main
       className="fixed inset-0 flex flex-col bg-white dark:bg-neutral-950"
@@ -101,17 +121,37 @@ export default function DesbloquearPage() {
     >
       <div className="flex flex-1 flex-col justify-center px-6">
         <div className="mx-auto w-full max-w-sm">
-          {step === "biometric" && (
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#003366] text-white dark:bg-[#4a90c8]">
+          {step === "biometric-retry" && (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#003366] text-white dark:bg-[#4a90c8]">
                 <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 11a3 3 0 100-6 3 3 0 000 6z" />
                   <path d="M20 21v-2a4 4 0 00-3-3.87M4 21v-2a4 4 0 013-3.87" />
                 </svg>
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Autenticando…
-              </p>
+              <div>
+                <h1 className="mb-1 text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  No pudimos verificarte
+                </h1>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Te quedan {MAX_BIOMETRIC_ATTEMPTS - biometricAttempts}{" "}
+                  {MAX_BIOMETRIC_ATTEMPTS - biometricAttempts === 1 ? "intento" : "intentos"} con {label}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={tryBiometric}
+                className="w-full rounded-xl bg-[#003366] px-3 py-3 text-[15px] font-semibold text-white dark:bg-[#4a90c8]"
+              >
+                Reintentar {label}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep("pin")}
+                className="block w-full text-center text-sm font-medium text-neutral-500 dark:text-neutral-400"
+              >
+                Usar PIN
+              </button>
             </div>
           )}
 

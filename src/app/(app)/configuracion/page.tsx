@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { ConfiguracionForm } from "@/components/configuracion-form";
 import { LogoutButton } from "@/components/logout-button";
 import { UnlockToggle } from "@/components/unlock-toggle";
-import { BiometricEnrollButton } from "@/components/biometric-enroll-button";
 
 export default async function PerfilPage() {
   const supabase = await createClient();
@@ -91,7 +90,6 @@ export default async function PerfilPage() {
             Seguridad
           </h2>
           <UnlockToggle />
-          <BiometricEnrollButton />
         </section>
       ) : !isAnonymous ? (
         <section>
@@ -103,9 +101,9 @@ export default async function PerfilPage() {
             className="flex items-center justify-between rounded-md border border-neutral-200 px-4 py-3 text-sm text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-900"
           >
             <div>
-              <p className="font-medium">Activar bloqueo con PIN o Face ID</p>
+              <p className="font-medium">Activar bloqueo al abrir la app</p>
               <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                Pide autenticación cada vez que abras la app.
+                Con PIN y desbloqueo biométrico si tu dispositivo lo permite.
               </p>
             </div>
             <span aria-hidden className="text-neutral-400">

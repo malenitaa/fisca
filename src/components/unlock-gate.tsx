@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { isCurrentlyUnlocked, isUnlockEnabled } from "@/lib/unlock";
+import { SplashView } from "@/components/splash-view";
 
 /**
  * Gate cliente-side sobre el layout autenticado. Redirige a /desbloquear
@@ -37,6 +38,6 @@ export function UnlockGate({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [pathname, router]);
 
-  if (!checked) return null;
+  if (!checked) return <SplashView />;
   return <>{children}</>;
 }
