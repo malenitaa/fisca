@@ -4,26 +4,31 @@ import { FeedbackRow } from "@/components/feedback-row";
 
 const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
   {
-    pregunta: "Trabajo por Deel, ¿qué factura tengo que emitir?",
+    pregunta: "¿Qué factura tengo que emitir?",
     respuesta: (
       <>
-        Factura E (exportación de servicios), en la moneda que te pagan (USD casi
-        siempre), con la cotización tipo <strong>vendedor</strong> del BNA del día que
-        emitís. NO Factura C — esa es sólo para clientes en Argentina.
-        <br />
-        <br />
-        En esta app: pestaña <strong>Exportación (E)</strong> arriba del formulario
-        de nueva factura. Cliente = &quot;Deel Inc.&quot;, país = Estados Unidos,
-        cargás la cotización, y los ítems en dólares. Legalmente el comprobante es
-        en pesos al tipo de cambio del día — la app lo calcula automático.
+        Depende de dónde está tu cliente:
+        <ul className="mt-2 ml-4 list-disc space-y-1">
+          <li>
+            <strong>Factura C</strong>: cliente en Argentina (empresa, particular
+            o monotributista). En pesos.
+          </li>
+          <li>
+            <strong>Factura E</strong>: cliente en el exterior (Deel, freelance
+            para empresas extranjeras, exportación). En la moneda que te pagan
+            (USD casi siempre), con la cotización tipo <strong>vendedor</strong>{" "}
+            del BNA del día. Legalmente el comprobante es en pesos al tipo de
+            cambio del día — la app lo calcula automático.
+          </li>
+        </ul>
       </>
     ),
   },
   {
-    pregunta: "¿Necesito estar habilitada como exportadora para emitir Factura E?",
+    pregunta: "¿Hace falta habilitación aparte para emitir Factura E?",
     respuesta: (
       <>
-        Sí. Como monotributista podés emitir Factura E, pero antes hay que:
+        Sí. Al ser monotributista se puede emitir Factura E, pero antes hay que:
         <ul className="mt-2 ml-4 list-disc space-y-1">
           <li>
             Dar de alta el punto de venta específicamente para{" "}
@@ -31,7 +36,7 @@ const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
             (webservice) en el portal de ARCA. Es un tipo distinto al de la Factura C.
           </li>
           <li>
-            Habilitar tu certificado digital para el servicio{" "}
+            Habilitar el certificado digital para el servicio{" "}
             <strong>&quot;ws - Facturación Electrónica de Exportación&quot;</strong>{" "}
             (wsfex) en el Administrador de Relaciones. Es una relación aparte de la
             que usa la Factura C.
@@ -58,18 +63,7 @@ const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
     ),
   },
   {
-    pregunta: "¿Qué diferencia hay entre Homologación y Producción?",
-    respuesta: (
-      <>
-        Homologación es el ambiente de pruebas de ARCA — las facturas que emitís ahí no son
-        válidas legalmente, es solo para probar que todo funciona. Producción es el ambiente
-        real: ahí sí genera comprobantes fiscales de verdad. Necesitás un certificado distinto
-        para cada uno, y elegís cuál usar en Configuración.
-      </>
-    ),
-  },
-  {
-    pregunta: "AFIP me rechazó la factura, ¿qué hago?",
+    pregunta: "ARCA me rechazó la factura, ¿qué hago?",
     respuesta: (
       <>
         La app te muestra el motivo real que devuelve ARCA (no un error genérico), en el cartel
@@ -115,17 +109,6 @@ const FAQS: { pregunta: string; respuesta: React.ReactNode }[] = [
       </>
     ),
   },
-  {
-    pregunta: "¿Cómo paso a producción cuando esté todo probado?",
-    respuesta: (
-      <>
-        Generá el certificado de producción (mismo proceso que homologación, pero en el servicio
-        de Administración de Certificados Digitales real de ARCA), y en Configuración cambiá el
-        ambiente a &quot;Producción&quot; y subí ese certificado. La primera factura que emitas
-        ahí ya es una factura real.
-      </>
-    ),
-  },
 ];
 
 export default async function AyudaPage() {
@@ -143,7 +126,7 @@ export default async function AyudaPage() {
       <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Ayuda</h1>
 
       <div className="rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
-        <p className="text-[14.5px] font-semibold">¿Trabaste una factura?</p>
+        <p className="text-[14.5px] font-semibold">¿Te rechazó ARCA una factura?</p>
         <p className="mt-1 text-[12.5px] leading-relaxed text-[#cfe0f2] dark:text-white/85">
           Te mostramos el motivo real que devuelve ARCA en el cartel que aparece al emitir — no
           un error genérico. Las causas más comunes están en las preguntas de abajo.
@@ -170,7 +153,8 @@ export default async function AyudaPage() {
           ))}
         </div>
         <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-          Si tu duda no está acá, revisá el README del proyecto.
+          Si tu duda no está acá, escribinos desde &quot;Queja o sugerencia&quot; o consultá
+          directo con ARCA.
         </p>
       </div>
 

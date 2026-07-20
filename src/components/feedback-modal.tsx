@@ -59,12 +59,9 @@ export function FeedbackModal({
       >
         {status === "sent" ? (
           <div className="text-center">
-            <h2 className="mb-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Gracias
+            <h2 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Muchas gracias por tu mensaje.
             </h2>
-            <p className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
-              Recibí tu mensaje. Lo miro apenas pueda.
-            </p>
             <button
               type="button"
               onClick={onClose}

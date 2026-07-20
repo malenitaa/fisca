@@ -99,10 +99,25 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
     });
   }, [invoices, periodo, estado, tipo, idsAnulados]);
 
-  const total = useMemo(
-    () => filtered.reduce((sum, i) => sum + Number(i.importe_total), 0),
-    [filtered]
-  );
+  // Totales de lo filtrado, separados por moneda. Excluimos NC (son la
+  // contraparte contable de una anulada, sumarlas cuenta doble) y las
+  // anuladas mismas (ya no valen). O sea: es el neto realmente facturado
+  // dentro del filtro.
+  const totales = useMemo(() => {
+    const validas = filtered.filter(
+      (i) =>
+        !idsAnulados.has(i.id) &&
+        i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
+        i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E
+    );
+    const ars = validas
+      .filter((i) => !i.moneda || i.moneda === "PES")
+      .reduce((s, i) => s + Number(i.importe_total), 0);
+    const usd = validas
+      .filter((i) => i.moneda === "DOL")
+      .reduce((s, i) => s + Number(i.importe_total), 0);
+    return { ars, usd, tieneAmbas: ars > 0 && usd > 0 };
+  }, [filtered, idsAnulados]);
 
   // Resumen del período actual (mes en curso). Muestra sólo facturas
   // VÁLIDAS (no anuladas), separando por moneda. Excluye las notas de
@@ -236,8 +251,20 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
           <span>
             {filtered.length} comprobante{filtered.length === 1 ? "" : "s"}
           </span>
-          <span>
-            Total: ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+          <span className="text-right">
+            {totales.ars === 0 && totales.usd === 0 ? (
+              <span className="italic">Sin válidas</span>
+            ) : (
+              <>
+                {totales.ars > 0 && (
+                  <>Neto: ${totales.ars.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</>
+                )}
+                {totales.tieneAmbas && <> · </>}
+                {totales.usd > 0 && (
+                  <>{totales.ars > 0 ? "" : "Neto: "}US${totales.usd.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</>
+                )}
+              </>
+            )}
           </span>
         </div>
       )}
