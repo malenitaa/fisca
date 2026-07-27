@@ -35,6 +35,11 @@ antes de asumir que están 100% listas para producción.
 - **Fix en `historial-list.tsx`**: los totales solo sumaban PES/DOL — una
   factura en EUR/GBP/BRL no aparecía en ningún total. Ahora agrupa por
   cualquier moneda de `MONEDAS`.
+- **Editar/borrar un contacto guardado** en la libreta de Factura C:
+  `PATCH`/`DELETE` nuevos en `/api/clientes/[id]` (solo nombre/condición
+  IVA — el tipo/número de documento es la identidad del contacto y no se
+  edita) y un modo "Editar contactos" en los chips del form que agrega un
+  editor inline y una confirmación antes de borrar.
 - Documentación (`README.md`, `ARCHITECTURE.md`, `.env.example`) puesta al
   día para reflejar todo lo de arriba **y** varias cosas que ya existían
   hace tiempo pero no estaban documentadas (ver sección siguiente).
@@ -142,10 +147,6 @@ antes de asumir que están 100% listas para producción.
 
 ## Pendiente de producto, evaluado pero no construido
 
-- **Editar/borrar un contacto guardado a mano** en la libreta de
-  `clientes` — hoy solo se autogeneran/actualizan al facturar
-  (`/api/clientes` solo tiene `GET`), no hay UI ni endpoint para
-  corregir un nombre mal cargado o borrar uno viejo.
 - **Buscador en la libreta de contactos** si la lista crece mucho más
   allá de los ~50 que trae hoy el endpoint (hoy no hay paginación ni
   filtro de texto).

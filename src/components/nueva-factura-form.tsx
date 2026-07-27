@@ -74,6 +74,13 @@ export function NuevaFacturaForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [result, setResult] = useState<EmitResult | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [editandoContactos, setEditandoContactos] = useState(false);
+  const [clienteEditId, setClienteEditId] = useState<string | null>(null);
+  const [edNombre, setEdNombre] = useState("");
+  const [edCondicionIva, setEdCondicionIva] = useState(5);
+  const [clienteEditStatus, setClienteEditStatus] = useState<"idle" | "saving" | "error">("idle");
+  const [confirmandoEliminarId, setConfirmandoEliminarId] = useState<string | null>(null);
+  const [eliminarStatus, setEliminarStatus] = useState<"idle" | "saving" | "error">("idle");
 
   useEffect(() => {
     fetch("/api/clientes")
@@ -87,6 +94,48 @@ export function NuevaFacturaForm() {
     setDocNro(c.doc_numero);
     setClienteNombre(c.nombre);
     setCondicionIva(c.condicion_iva_id);
+  }
+
+  function startEditCliente(c: Cliente) {
+    setClienteEditId(c.id);
+    setEdNombre(c.nombre);
+    setEdCondicionIva(c.condicion_iva_id);
+    setClienteEditStatus("idle");
+  }
+
+  async function guardarEdicionCliente() {
+    if (!clienteEditId) return;
+    setClienteEditStatus("saving");
+    try {
+      const res = await fetch(`/api/clientes/${clienteEditId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: edNombre, condicionIvaId: edCondicionIva }),
+      });
+      if (!res.ok) throw new Error();
+      setClientes((prev) =>
+        prev.map((c) =>
+          c.id === clienteEditId ? { ...c, nombre: edNombre, condicion_iva_id: edCondicionIva } : c
+        )
+      );
+      setClienteEditId(null);
+    } catch {
+      setClienteEditStatus("error");
+    }
+  }
+
+  async function eliminarCliente(id: string) {
+    setEliminarStatus("saving");
+    try {
+      const res = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setClientes((prev) => prev.filter((c) => c.id !== id));
+      if (clienteEditId === id) setClienteEditId(null);
+      setConfirmandoEliminarId(null);
+      setEliminarStatus("idle");
+    } catch {
+      setEliminarStatus("error");
+    }
   }
 
   const traerCotizacion = useCallback(async () => {
@@ -316,6 +365,32 @@ export function NuevaFacturaForm() {
           </button>
           {clientes.slice(0, 12).map((c) => {
             const isSelected = !clienteEsCF && docTipo === c.doc_tipo && docNro === c.doc_numero;
+            const label = c.nombre
+              ? `${c.nombre} · ${c.doc_tipo === 80 ? "CUIT" : "DNI"}`
+              : `${c.doc_tipo === 80 ? "CUIT" : "DNI"} ${c.doc_numero}`;
+            if (editandoContactos) {
+              return (
+                <span
+                  key={c.id}
+                  className="flex shrink-0 items-center gap-0.5 rounded-lg border border-neutral-200 bg-white py-1 pl-3 pr-1 text-xs font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300"
+                >
+                  <button type="button" onClick={() => startEditCliente(c)} className="py-1">
+                    {label}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmandoEliminarId(c.id);
+                      setEliminarStatus("idle");
+                    }}
+                    aria-label={`Eliminar contacto ${label}`}
+                    className="rounded-md px-1.5 py-1 text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            }
             return (
               <button
                 key={c.id}
@@ -327,9 +402,7 @@ export function NuevaFacturaForm() {
                     : "border-neutral-200 bg-white text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300"
                 }`}
               >
-                {c.nombre
-                  ? `${c.nombre} · ${c.doc_tipo === 80 ? "CUIT" : "DNI"}`
-                  : `${c.doc_tipo === 80 ? "CUIT" : "DNI"} ${c.doc_numero}`}
+                {label}
               </button>
             );
           })}
@@ -345,7 +418,89 @@ export function NuevaFacturaForm() {
           >
             + Nuevo
           </button>
+          {clientes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditandoContactos((v) => !v);
+                setClienteEditId(null);
+                setConfirmandoEliminarId(null);
+              }}
+              className="flex shrink-0 items-center px-2 py-2 text-xs font-medium text-neutral-500 hover:text-[#003366] dark:text-neutral-400 dark:hover:text-[#7bb0e0]"
+            >
+              {editandoContactos ? "Listo" : "Editar contactos"}
+            </button>
+          )}
         </div>
+
+        {clienteEditId && (
+          <div className="mb-3 space-y-2 rounded-xl border border-neutral-200 bg-white p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+            <input
+              value={edNombre}
+              onChange={(e) => setEdNombre(e.target.value)}
+              autoCapitalize="words"
+              placeholder="Nombre / Razón social"
+              className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
+            />
+            <select
+              value={edCondicionIva}
+              onChange={(e) => setEdCondicionIva(Number(e.target.value))}
+              className="w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+            >
+              {CONDICION_IVA_RECEPTOR.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={guardarEdicionCliente}
+                disabled={clienteEditStatus === "saving"}
+                className="rounded-lg bg-[#003366] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 dark:bg-[#4a90c8]"
+              >
+                {clienteEditStatus === "saving" ? "Guardando..." : "Guardar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setClienteEditId(null)}
+                className="text-xs text-neutral-500 dark:text-neutral-400"
+              >
+                Cancelar
+              </button>
+              {clienteEditStatus === "error" && (
+                <span className="text-xs text-red-600 dark:text-red-400">
+                  No se pudo guardar. Reintentá.
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {confirmandoEliminarId && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs dark:border-red-900 dark:bg-red-950/40">
+            <span className="text-red-700 dark:text-red-400">¿Eliminar este contacto de la libreta?</span>
+            <button
+              type="button"
+              onClick={() => eliminarCliente(confirmandoEliminarId)}
+              disabled={eliminarStatus === "saving"}
+              className="font-semibold text-red-700 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
+            >
+              {eliminarStatus === "saving" ? "Eliminando..." : "Eliminar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmandoEliminarId(null)}
+              className="text-neutral-500 dark:text-neutral-400"
+            >
+              Cancelar
+            </button>
+            {eliminarStatus === "error" && (
+              <span className="text-red-700 dark:text-red-400">No se pudo eliminar. Reintentá.</span>
+            )}
+          </div>
+        )}
 
         <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
           <label

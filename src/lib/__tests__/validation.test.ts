@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nuevaFacturaSchema } from "../validation";
+import { clienteUpdateSchema, nuevaFacturaSchema } from "../validation";
 
 /** Misma referencia horaria que usa validation.ts: "hoy" en Argentina
  * (UTC-3 fijo), para no depender de la zona horaria de quien corre el test. */
@@ -122,5 +122,23 @@ describe("nuevaFacturaSchema — moneda extranjera (RG 5616/2024)", () => {
     if (!result.success) {
       expect(result.error.issues[0].path).toEqual(["canMisMonExt"]);
     }
+  });
+});
+
+describe("clienteUpdateSchema", () => {
+  it("acepta solo nombre", () => {
+    expect(clienteUpdateSchema.safeParse({ nombre: "Juan Pérez" }).success).toBe(true);
+  });
+
+  it("acepta solo condicionIvaId", () => {
+    expect(clienteUpdateSchema.safeParse({ condicionIvaId: 1 }).success).toBe(true);
+  });
+
+  it("rechaza un objeto vacío (nada para actualizar)", () => {
+    expect(clienteUpdateSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rechaza un nombre demasiado largo", () => {
+    expect(clienteUpdateSchema.safeParse({ nombre: "a".repeat(201) }).success).toBe(false);
   });
 });

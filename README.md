@@ -24,7 +24,8 @@ historial, listo.
    hace falta tener OpenSSL instalado (ver Setup § 1).
 4. **Nueva factura**: fecha del comprobante (por defecto hoy, editable
    dentro del rango que acepta ARCA), concepto, cliente (CUIT/DNI o
-   Consumidor Final, con autocompletado de contactos recientes), condición
+   Consumidor Final, con autocompletado de contactos recientes —
+   editables o borrables ahí mismo, con "Editar contactos"), condición
    frente al IVA del receptor, moneda extranjera opcional (RG 5616/2024,
    con cotización oficial o asignada automáticamente por ARCA si el pago es
    en la misma moneda), ítems con descripción/cantidad/precio. Valida todo

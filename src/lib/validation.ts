@@ -157,4 +157,18 @@ export const nuevaFacturaESchema = z.object({
   }
 });
 
+/** Edición manual de un contacto de la libreta (solo nombre/condición IVA
+ * — el tipo/número de documento es la identidad del contacto y no se
+ * edita, para no chocar con el unique(user_id, doc_tipo, doc_numero)). */
+export const clienteUpdateSchema = z
+  .object({
+    nombre: z.string().trim().max(200).optional(),
+    condicionIvaId: z.coerce.number().int().optional(),
+  })
+  .refine((d) => d.nombre !== undefined || d.condicionIvaId !== undefined, {
+    message: "No hay nada para actualizar.",
+  });
+
+export type ClienteUpdateInput = z.infer<typeof clienteUpdateSchema>;
+
 export type NuevaFacturaEFormInput = z.infer<typeof nuevaFacturaESchema>;

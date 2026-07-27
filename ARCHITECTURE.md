@@ -97,7 +97,9 @@ manipulando la API directamente.
 - **`clientes`** (`0004_clientes.sql`): libreta de contactos — se
   autocompleta sola (`upsert` al emitir una factura, no un CRM manual) para
   no volver a tipear CUIT/nombre/condición IVA de un cliente ya facturado.
-  Consumidor Final no se guarda (no tiene identidad que recordar).
+  Consumidor Final no se guarda (no tiene identidad que recordar). Nombre y
+  condición IVA se pueden corregir o borrar a mano (`/api/clientes/[id]`);
+  el tipo/número de documento no se edita — es la identidad del contacto.
 
 **Onboarding y certificado**
 
@@ -221,9 +223,11 @@ Estas cosas fueron evaluadas y descartadas a propósito, no son un
   se tomó. Lo que sí hay es un recordatorio + link directo a ARCA.
 - **CRM de clientes / Pedidos / Presupuestos**: la tabla `clientes` que sí
   existe (§4) es una libreta liviana que se autocompleta sola al
-  facturar, no algo que se edite a mano ni un sistema de gestión — eso
-  seguiría convirtiendo esto en algo más grande, en contra del objetivo
-  original ("una sola pantalla para facturar rápido").
+  facturar — se puede corregir el nombre/condición IVA o borrar un
+  contacto (`/api/clientes/[id]`, `PATCH`/`DELETE`, agregado 2026-07-27),
+  pero no tiene alta manual ni es un sistema de gestión — eso seguiría
+  convirtiendo esto en algo más grande, en contra del objetivo original
+  ("una sola pantalla para facturar rápido").
 
 **Ya no está fuera de alcance** (para no repetir el error de dar por
 "descartado" algo que después se construyó): **Factura E** de
