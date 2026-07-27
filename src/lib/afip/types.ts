@@ -95,6 +95,19 @@ export interface NuevaFacturaInput {
   clienteNombre?: string;
   condicionIvaReceptorId: number;
   items: FacturaItem[];
+  /** Fecha del comprobante (CbteFch). Si no se especifica, AFIP usa la fecha
+   * de asignación del CAE. AFIP acepta hasta 5 días (Productos) o 10 días
+   * (Servicios) de diferencia respecto a hoy. */
+  fechaComprobante?: string;
+  /** Moneda del comprobante (RG 5616/2024). Si no se especifica, es pesos. */
+  monedaId?: string;
+  /** Cotización de la moneda. Obligatoria si monedaId no es PES y
+   * canMisMonExt !== "S" (si el pago es en la misma moneda extranjera,
+   * ARCA asigna el tipo de cambio automáticamente). */
+  monedaCotizacion?: number;
+  /** Si el pago del comprobante se realiza en la misma moneda extranjera
+   * facturada ("S") o en pesos ("N"). Solo aplica si monedaId no es PES. */
+  canMisMonExt?: "S" | "N";
   /** Requeridas por AFIP cuando concepto incluye Servicios (2 o 3). */
   fechaServicioDesde?: string;
   fechaServicioHasta?: string;

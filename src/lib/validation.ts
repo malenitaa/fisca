@@ -27,6 +27,19 @@ const isoDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida.")
   .optional();
 
+/** Medianoche de hoy en Argentina (UTC-3 fijo, sin horario de verano),
+ * independiente de la zona horaria del proceso que ejecuta el servidor. */
+function hoyArgentinaUTCms(): number {
+  const argNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  return Date.UTC(argNow.getUTCFullYear(), argNow.getUTCMonth(), argNow.getUTCDate());
+}
+
+/** Diferencia en días (con signo) entre una fecha ISO y hoy en Argentina. */
+function diffDiasDesdeHoy(iso: string): number {
+  const target = new Date(`${iso}T00:00:00Z`).getTime();
+  return Math.round((target - hoyArgentinaUTCms()) / 86_400_000);
+}
+
 export const nuevaFacturaSchema = z
   .object({
     concepto: z.coerce.number().int().refine((v) => [1, 2, 3].includes(v)),
@@ -35,29 +48,38 @@ export const nuevaFacturaSchema = z
     clienteNombre: z.string().trim().max(200).optional(),
     condicionIvaReceptorId: z.coerce.number().int(),
     items: z.array(itemSchema).min(1, "Agregá al menos un ítem."),
+    fechaComprobante: isoDateSchema,
     fechaServicioDesde: isoDateSchema,
     fechaServicioHasta: isoDateSchema,
     fechaVtoPago: isoDateSchema,
+    monedaId: z
+      .string()
+      .trim()
+      .regex(/^[A-Z0-9]{3,4}$/, "Moneda inválida.")
+      .optional(),
+    monedaCotizacion: z.coerce.number().positive("La cotización debe ser positiva.").optional(),
+    canMisMonExt: z.enum(["S", "N"]).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.docTipo === 99) {
-      // Consumidor Final sin identificar: AFIP espera DocNro "0".
-      return;
-    }
-    const digits = data.docNro.replace(/[^0-9]/g, "");
-    if (data.docTipo === 80 && digits.length !== 11) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["docNro"],
-        message: "El CUIT del cliente debe tener 11 dígitos.",
-      });
-    }
-    if (data.docTipo === 96 && (digits.length < 7 || digits.length > 8)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["docNro"],
-        message: "El DNI del cliente debe tener 7 u 8 dígitos.",
-      });
+    // Consumidor Final (docTipo 99) sin identificar: AFIP espera DocNro "0",
+    // así que el CUIT/DNI no se valida. El resto de las reglas (fechas de
+    // servicio, rango de fechaComprobante) rigen para cualquier docTipo.
+    if (data.docTipo !== 99) {
+      const digits = data.docNro.replace(/[^0-9]/g, "");
+      if (data.docTipo === 80 && digits.length !== 11) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["docNro"],
+          message: "El CUIT del cliente debe tener 11 dígitos.",
+        });
+      }
+      if (data.docTipo === 96 && (digits.length < 7 || digits.length > 8)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["docNro"],
+          message: "El DNI del cliente debe tener 7 u 8 dígitos.",
+        });
+      }
     }
     if (data.concepto !== 1 && (!data.fechaServicioDesde || !data.fechaServicioHasta || !data.fechaVtoPago)) {
       ctx.addIssue({
@@ -65,6 +87,36 @@ export const nuevaFacturaSchema = z
         path: ["fechaServicioDesde"],
         message: "Para servicios, AFIP requiere fecha desde/hasta y vencimiento de pago.",
       });
+    }
+    if (data.fechaComprobante) {
+      // AFIP: hasta 5 días (Productos) o 10 días (Servicios / Productos y Servicios)
+      // de diferencia respecto a hoy, en cualquier sentido.
+      const limite = data.concepto === 1 ? 5 : 10;
+      if (Math.abs(diffDiasDesdeHoy(data.fechaComprobante)) > limite) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fechaComprobante"],
+          message: `La fecha del comprobante no puede diferir más de ${limite} días de hoy para este concepto.`,
+        });
+      }
+    }
+    if (data.monedaId && data.monedaId !== "PES") {
+      // RG 5616/2024: en moneda extranjera hay que indicar si el pago es en
+      // la misma moneda (ARCA asigna la cotización) o en pesos (la informa
+      // el emisor).
+      if (data.canMisMonExt !== "S" && data.canMisMonExt !== "N") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["canMisMonExt"],
+          message: "Indicá si el pago se realiza en la misma moneda o en pesos.",
+        });
+      } else if (data.canMisMonExt === "N" && !(data.monedaCotizacion && data.monedaCotizacion > 0)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["monedaCotizacion"],
+          message: "Ingresá la cotización usada para convertir a pesos.",
+        });
+      }
     }
   });
 

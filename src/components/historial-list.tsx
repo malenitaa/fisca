@@ -42,6 +42,31 @@ function monedaSimbolo(value?: string): string {
   return MONEDAS.find((m) => m.value === value)?.symbol ?? value;
 }
 
+interface MonedaTotal {
+  moneda: string;
+  symbol: string;
+  total: number;
+  count: number;
+}
+
+/** Agrupa importes por moneda (no solo PES/DOL — cualquiera de MONEDAS). */
+function agruparPorMoneda(invs: Invoice[]): MonedaTotal[] {
+  const porMoneda = new Map<string, { total: number; count: number }>();
+  for (const inv of invs) {
+    const moneda = inv.moneda || "PES";
+    const entry = porMoneda.get(moneda) ?? { total: 0, count: 0 };
+    entry.total += Number(inv.importe_total);
+    entry.count += 1;
+    porMoneda.set(moneda, entry);
+  }
+  return Array.from(porMoneda.entries()).map(([moneda, { total, count }]) => ({
+    moneda,
+    symbol: monedaSimbolo(moneda),
+    total,
+    count,
+  }));
+}
+
 type Estado = "todos" | "validos" | "anulados";
 type Tipo = "todos" | "factura_c" | "factura_e" | "nota";
 
@@ -99,10 +124,11 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
     });
   }, [invoices, periodo, estado, tipo, idsAnulados]);
 
-  // Totales de lo filtrado, separados por moneda. Excluimos NC (son la
-  // contraparte contable de una anulada, sumarlas cuenta doble) y las
-  // anuladas mismas (ya no valen). O sea: es el neto realmente facturado
-  // dentro del filtro.
+  // Totales de lo filtrado, separados por moneda (cualquiera de MONEDAS, no
+  // solo PES/DOL). Excluimos NC (son la contraparte contable de una anulada,
+  // sumarlas cuenta doble) y las anuladas mismas (ya no valen). O sea: es el
+  // neto realmente facturado dentro del filtro. PES va primero si existe;
+  // el resto, de mayor a menor importe en su propia moneda.
   const totales = useMemo(() => {
     const validas = filtered.filter(
       (i) =>
@@ -110,13 +136,9 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
         i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
         i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E
     );
-    const ars = validas
-      .filter((i) => !i.moneda || i.moneda === "PES")
-      .reduce((s, i) => s + Number(i.importe_total), 0);
-    const usd = validas
-      .filter((i) => i.moneda === "DOL")
-      .reduce((s, i) => s + Number(i.importe_total), 0);
-    return { ars, usd, tieneAmbas: ars > 0 && usd > 0 };
+    return agruparPorMoneda(validas)
+      .filter((m) => m.total > 0)
+      .sort((a, b) => (a.moneda === "PES" ? -1 : b.moneda === "PES" ? 1 : b.total - a.total));
   }, [filtered, idsAnulados]);
 
   // Resumen del período actual (mes en curso). Muestra sólo facturas
@@ -134,74 +156,39 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
         i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
         i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E
     );
-    const totalArs = filas
-      .filter((i) => !i.moneda || i.moneda === "PES")
-      .reduce((s, i) => s + Number(i.importe_total), 0);
-    const totalUsd = filas
-      .filter((i) => i.moneda === "DOL")
-      .reduce((s, i) => s + Number(i.importe_total), 0);
-    return { totalArs, totalUsd, count: filas.length };
+    // La "principal" (destacada grande) es la moneda con más comprobantes
+    // este mes; el resto se muestra como líneas chicas debajo, todas.
+    const porMoneda = agruparPorMoneda(filas)
+      .filter((m) => m.total > 0)
+      .sort((a, b) => b.count - a.count);
+    return { porMoneda, count: filas.length };
   }, [invoices, idsAnulados, currentMonth]);
 
   return (
     <div>
-      {/* Card resumen: la moneda con mayor volumen se muestra como principal
-       * (destacado grande). La otra, si existe, va abajo con tamaño chico.
-       * Comparamos por valor absoluto; el peso argentino es típicamente
-       * mucho más "grande" numéricamente que USD, así que también miramos
-       * el equivalente en pesos aproximado — pero para no depender de una
-       * cotización, comparamos por cantidad de facturas y usamos como
-       * criterio cuál tiene mayor total en su propia moneda. */}
+      {/* Card resumen: la moneda con más comprobantes este mes se muestra
+       * como principal (destacado grande). El resto, si existe, va abajo
+       * con tamaño chico — todas, no solo una segunda. */}
       {(() => {
-        const arsCount = summary.totalArs > 0 ? 1 : 0;
-        const usdCount = summary.totalUsd > 0 ? 1 : 0;
-        // Si solo hay USD, USD es principal. Si solo ARS, ARS principal.
-        // Si hay ambas, mostramos como principal la que tenga MAYOR
-        // magnitud comparada en su propia unidad (más facturas emitidas
-        // en esa moneda).
-        const arsInvoices = invoices.filter(
-          (i) =>
-            i.fecha_emision.startsWith(currentMonth) &&
-            !idsAnulados.has(i.id) &&
-            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
-            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E &&
-            (!i.moneda || i.moneda === "PES")
-        ).length;
-        const usdInvoices = invoices.filter(
-          (i) =>
-            i.fecha_emision.startsWith(currentMonth) &&
-            !idsAnulados.has(i.id) &&
-            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_C &&
-            i.cbte_tipo !== CBTE_TIPO_NOTA_CREDITO_E &&
-            i.moneda === "DOL"
-        ).length;
-        const usdEsPrincipal =
-          usdCount > 0 && (arsCount === 0 || usdInvoices >= arsInvoices);
-        const principal = usdEsPrincipal
-          ? { symbol: "US$", total: summary.totalUsd }
-          : { symbol: "$", total: summary.totalArs };
-        const secundario = usdEsPrincipal
-          ? summary.totalArs > 0
-            ? { symbol: "$", total: summary.totalArs }
-            : null
-          : summary.totalUsd > 0
-          ? { symbol: "US$", total: summary.totalUsd }
-          : null;
+        const [principal, ...secundarios] = summary.porMoneda;
         return (
           <div className="mb-4 rounded-2xl bg-[#003366] p-4 text-white dark:bg-[#4a90c8]">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-xs opacity-80">Facturado este mes</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums">
-                  {principal.symbol}
-                  {principal.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  {principal
+                    ? `${principal.symbol}${principal.total.toLocaleString("es-AR", {
+                        minimumFractionDigits: 2,
+                      })}`
+                    : "$0,00"}
                 </p>
-                {secundario && (
-                  <p className="mt-1 text-sm opacity-90 tabular-nums">
-                    + {secundario.symbol}
-                    {secundario.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                {secundarios.map((m) => (
+                  <p key={m.moneda} className="mt-1 text-sm opacity-90 tabular-nums">
+                    + {m.symbol}
+                    {m.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                   </p>
-                )}
+                ))}
               </div>
               <div className="text-right">
                 <p className="text-xs opacity-80">Comprobantes</p>
@@ -252,18 +239,17 @@ export function HistorialList({ invoices }: { invoices: Invoice[] }) {
             {filtered.length} comprobante{filtered.length === 1 ? "" : "s"}
           </span>
           <span className="text-right">
-            {totales.ars === 0 && totales.usd === 0 ? (
+            {totales.length === 0 ? (
               <span className="italic">Sin válidas</span>
             ) : (
-              <>
-                {totales.ars > 0 && (
-                  <>Neto: ${totales.ars.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</>
-                )}
-                {totales.tieneAmbas && <> · </>}
-                {totales.usd > 0 && (
-                  <>{totales.ars > 0 ? "" : "Neto: "}US${totales.usd.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</>
-                )}
-              </>
+              totales.map((m, i) => (
+                <span key={m.moneda}>
+                  {i > 0 && " · "}
+                  {i === 0 && "Neto: "}
+                  {m.symbol}
+                  {m.total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                </span>
+              ))
             )}
           </span>
         </div>

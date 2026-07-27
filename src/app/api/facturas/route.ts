@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { decryptSecret } from "@/lib/crypto";
 import { getTicketAcceso } from "@/lib/afip/ta-cache";
-import { getProximoNumeroComprobante, importeTotal, solicitarCae } from "@/lib/afip/wsfe";
+import {
+  getCotizacionOficial,
+  getProximoNumeroComprobante,
+  importeTotal,
+  solicitarCae,
+} from "@/lib/afip/wsfe";
 import { AfipError } from "@/lib/afip/errors";
 import { CBTE_TIPO_FACTURA_C } from "@/lib/afip/types";
 import { nuevaFacturaSchema } from "@/lib/validation";
@@ -77,9 +82,13 @@ export async function POST(request: Request) {
       clienteNombre: input.clienteNombre,
       condicionIvaReceptorId: input.condicionIvaReceptorId,
       items: input.items,
+      fechaComprobante: input.fechaComprobante,
       fechaServicioDesde: input.fechaServicioDesde,
       fechaServicioHasta: input.fechaServicioHasta,
       fechaVtoPago: input.fechaVtoPago,
+      monedaId: input.monedaId,
+      monedaCotizacion: input.monedaCotizacion,
+      canMisMonExt: input.canMisMonExt,
     };
 
     const cae = await solicitarCae({
@@ -90,6 +99,32 @@ export async function POST(request: Request) {
       factura: facturaInput,
       importeTotal: total,
     });
+
+    const monedaId = input.monedaId && input.monedaId !== "PES" ? input.monedaId : "PES";
+    const esMonedaExtranjera = monedaId !== "PES";
+
+    // El CAE ya se otorgó con la cotización que corresponda (asignada por
+    // ARCA si CanMisMonExt="S", o la informada si es en pesos). Esta consulta
+    // es solo para guardar un valor de referencia en el historial/PDF —
+    // nunca puede hacer fallar el guardado de una factura ya autorizada.
+    let monedaCotizacionGuardada = 1;
+    if (esMonedaExtranjera) {
+      if (input.canMisMonExt === "S") {
+        try {
+          const oficial = await getCotizacionOficial({
+            ambiente,
+            auth,
+            monedaId,
+            fecha: cae.fechaEmision,
+          });
+          monedaCotizacionGuardada = oficial.monCotiz;
+        } catch {
+          monedaCotizacionGuardada = input.monedaCotizacion ?? 1;
+        }
+      } else {
+        monedaCotizacionGuardada = input.monedaCotizacion ?? 1;
+      }
+    }
 
     const { data: inserted, error: insertError } = await supabase
       .from("invoices")
@@ -106,7 +141,8 @@ export async function POST(request: Request) {
         condicion_iva_receptor_id: input.condicionIvaReceptorId,
         items: input.items,
         importe_total: total,
-        moneda: "PES",
+        moneda: monedaId,
+        moneda_cotizacion: monedaCotizacionGuardada,
         fecha_emision: cae.fechaEmision,
         cae: cae.cae,
         cae_vencimiento: cae.caeFchVto,

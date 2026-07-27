@@ -107,6 +107,7 @@ function tituloComprobante(cbteTipo: number): string {
 
 function InvoiceDocument(data: InvoicePdfData) {
   const esE = data.cbteTipo === CBTE_TIPO_FACTURA_E || data.cbteTipo === CBTE_TIPO_NOTA_CREDITO_E;
+  const esMonedaExtranjera = !!data.moneda && data.moneda !== "PES";
   const titulo = tituloComprobante(data.cbteTipo);
   const simbolo = monedaSimbolo(data.moneda);
 
@@ -173,6 +174,14 @@ function InvoiceDocument(data: InvoicePdfData) {
                 <Text style={styles.label}>Condición frente al IVA</Text>
                 <Text>{condicionIvaLabel(data.condicionIvaReceptorId)}</Text>
               </View>
+              {esMonedaExtranjera && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Moneda</Text>
+                  <Text>
+                    {data.moneda} · cotización {(data.monedaCotizacion ?? 1).toFixed(4)}
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </View>
@@ -206,7 +215,7 @@ function InvoiceDocument(data: InvoicePdfData) {
             {fmtMoney(data.importeTotal)}
           </Text>
         </View>
-        {esE && data.monedaCotizacion && (
+        {esMonedaExtranjera && data.monedaCotizacion && (
           <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 2 }}>
             <Text style={{ fontSize: 9, color: "#555" }}>
               Equivalente en pesos: $

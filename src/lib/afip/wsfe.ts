@@ -117,7 +117,9 @@ export async function solicitarCae(params: {
     comprobantesAsociados = [],
   } = params;
 
-  const fechaEmision = todayYYYYMMDD();
+  const fechaEmision = factura.fechaComprobante
+    ? toAfipDate(factura.fechaComprobante)
+    : todayYYYYMMDD();
   const esServicio = factura.concepto === 2 || factura.concepto === 3;
 
   const fechasServicio = esServicio
@@ -142,6 +144,23 @@ export async function solicitarCae(params: {
               .join("\n            ")}
           </ar:CbtesAsoc>`
       : "";
+
+  // RG 5616/2024: MonId != PES habilita moneda extranjera. CanMisMonExt indica
+  // si el pago es en la misma moneda ("S", ARCA asigna la cotización oficial
+  // automáticamente — informarla obliga a que coincida exacto, error 10038)
+  // o en pesos ("N", la cotización va a cargo del emisor).
+  const monId = factura.monedaId && factura.monedaId !== "PES" ? factura.monedaId : "PES";
+  const esMonedaExtranjera = monId !== "PES";
+  const canMisMonExt = esMonedaExtranjera && factura.canMisMonExt === "S" ? "S" : "N";
+
+  const monCotizTag = !esMonedaExtranjera
+    ? `\n          <ar:MonCotiz>1</ar:MonCotiz>`
+    : canMisMonExt === "S"
+    ? ""
+    : `\n          <ar:MonCotiz>${(factura.monedaCotizacion ?? 0).toFixed(4)}</ar:MonCotiz>`;
+  const canMisMonExtTag = esMonedaExtranjera
+    ? `\n          <ar:CanMisMonExt>${canMisMonExt}</ar:CanMisMonExt>`
+    : "";
 
   // Factura C / Nota de Crédito C: el monotributista no discrimina IVA, así
   // que todo el importe va como "neto" y el resto de los importes
@@ -168,8 +187,7 @@ export async function solicitarCae(params: {
           <ar:ImpOpEx>0.00</ar:ImpOpEx>
           <ar:ImpIVA>0.00</ar:ImpIVA>
           <ar:ImpTrib>0.00</ar:ImpTrib>${fechasServicio}${cbtesAsocBlock}
-          <ar:MonId>PES</ar:MonId>
-          <ar:MonCotiz>1</ar:MonCotiz>
+          <ar:MonId>${monId}</ar:MonId>${monCotizTag}${canMisMonExtTag}
           <ar:CondicionIVAReceptorId>${factura.condicionIvaReceptorId}</ar:CondicionIVAReceptorId>
         </ar:FECAEDetRequest>
       </ar:FeDetReq>
@@ -232,5 +250,61 @@ export async function solicitarCae(params: {
     numeroComprobante,
     fechaEmision: fromAfipDate(fechaEmision),
     observaciones,
+  };
+}
+
+export interface CotizacionOficial {
+  monId: string;
+  monCotiz: number;
+  fchCotiz: string;
+}
+
+/** Cotización de referencia de AFIP para una moneda (FEParamGetCotizacion).
+ * El propio manual del desarrollador la marca como "orientativa" — sirve
+ * para prellenar/mostrar un valor, no reemplaza la que asigna ARCA al
+ * autorizar un comprobante con CanMisMonExt="S". */
+export async function getCotizacionOficial(params: {
+  ambiente: Ambiente;
+  auth: AuthParams;
+  monedaId: string;
+  fecha?: string;
+}): Promise<CotizacionOficial> {
+  const { ambiente, auth, monedaId, fecha } = params;
+
+  const body = `<ar:FEParamGetCotizacion>
+    ${authBlock(auth)}
+    <ar:MonId>${xmlEscape(monedaId)}</ar:MonId>${
+    fecha ? `\n    <ar:FchCotiz>${toAfipDate(fecha)}</ar:FchCotiz>` : ""
+  }
+  </ar:FEParamGetCotizacion>`;
+
+  const responseBody = await callWsfeSoap({
+    endpoint: AFIP_ENDPOINTS[ambiente].wsfe,
+    soapAction: "http://ar.gov.afip.dif.FEV1/FEParamGetCotizacion",
+    body,
+  });
+
+  const result = (responseBody as Record<string, Record<string, unknown>>)
+    .FEParamGetCotizacionResponse?.FEParamGetCotizacionResult as Record<string, unknown>;
+
+  const errors = asArray(
+    (result?.Errors as Record<string, unknown>)?.Err as
+      | { Code?: string; Msg?: string }
+      | { Code?: string; Msg?: string }[]
+      | undefined
+  );
+  if (errors.length > 0) {
+    throw new AfipError(`AFIP rechazó la consulta de cotización: ${formatAfipIssues(errors)}`);
+  }
+
+  const resultGet = result?.ResultGet as Record<string, unknown> | undefined;
+  if (!resultGet?.MonCotiz) {
+    throw new AfipError("AFIP no devolvió una cotización para esa moneda.");
+  }
+
+  return {
+    monId: String(resultGet.MonId ?? monedaId),
+    monCotiz: Number(resultGet.MonCotiz),
+    fchCotiz: resultGet.FchCotiz ? fromAfipDate(String(resultGet.FchCotiz)) : "",
   };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { getProximoNumeroComprobante, solicitarCae } from "../wsfe";
+import { getCotizacionOficial, getProximoNumeroComprobante, solicitarCae } from "../wsfe";
 import { AfipError } from "../errors";
 import type { NuevaFacturaInput } from "../types";
 
@@ -225,6 +225,136 @@ describe("solicitarCae", () => {
     expect(body).toContain("<ar:Nro>43</ar:Nro>");
   });
 
+  it("manda la fecha elegida como CbteFch cuando se especifica fechaComprobante", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      factura: { ...baseFactura, fechaComprobante: "2026-07-30" },
+      importeTotal: 1000,
+    });
+
+    const body = getBody();
+    expect(body).toContain("<ar:CbteFch>20260730</ar:CbteFch>");
+  });
+
+  it("sin monedaId manda MonId=PES, MonCotiz=1 y sin CanMisMonExt (default de siempre)", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      factura: baseFactura,
+      importeTotal: 1000,
+    });
+
+    const body = getBody();
+    expect(body).toContain("<ar:MonId>PES</ar:MonId>");
+    expect(body).toContain("<ar:MonCotiz>1</ar:MonCotiz>");
+    expect(body).not.toContain("<ar:CanMisMonExt>");
+  });
+
+  it("moneda extranjera + pago en la misma moneda: manda CanMisMonExt=S y OMITE MonCotiz (lo asigna ARCA)", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      factura: { ...baseFactura, monedaId: "DOL", canMisMonExt: "S" },
+      importeTotal: 1000,
+    });
+
+    const body = getBody();
+    expect(body).toContain("<ar:MonId>DOL</ar:MonId>");
+    expect(body).toContain("<ar:CanMisMonExt>S</ar:CanMisMonExt>");
+    expect(body).not.toContain("<ar:MonCotiz>");
+  });
+
+  it("moneda extranjera + pago en pesos: manda CanMisMonExt=N y la cotización informada", async () => {
+    const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FECAESolicitarResponse>
+      <ar:FECAESolicitarResult>
+        <ar:FeDetResp>
+          <ar:FECAEDetResponse>
+            <ar:Resultado>A</ar:Resultado>
+            <ar:CAE>1234567890</ar:CAE>
+            <ar:CAEFchVto>20260725</ar:CAEFchVto>
+          </ar:FECAEDetResponse>
+        </ar:FeDetResp>
+      </ar:FECAESolicitarResult>
+    </ar:FECAESolicitarResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await solicitarCae({
+      ambiente: "homologacion",
+      auth,
+      puntoVenta: 1,
+      numeroComprobante: 1,
+      factura: { ...baseFactura, monedaId: "DOL", canMisMonExt: "N", monedaCotizacion: 1481 },
+      importeTotal: 1000,
+    });
+
+    const body = getBody();
+    expect(body).toContain("<ar:MonId>DOL</ar:MonId>");
+    expect(body).toContain("<ar:CanMisMonExt>N</ar:CanMisMonExt>");
+    expect(body).toContain("<ar:MonCotiz>1481.0000</ar:MonCotiz>");
+  });
+
   it("escapa caracteres XML en docNro (defensa en profundidad contra XML injection)", async () => {
     const getBody = stubFetchOnceCapturing(`<?xml version="1.0"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
@@ -255,5 +385,47 @@ describe("solicitarCae", () => {
     const body = getBody();
     expect(body).not.toContain("<ar:Injected>");
     expect(body).toContain("&lt;ar:Injected&gt;&amp;&quot;&apos;&lt;/ar:Injected&gt;");
+  });
+});
+
+describe("getCotizacionOficial", () => {
+  it("devuelve la cotización oficial de la moneda pedida", async () => {
+    stubFetchOnce(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FEParamGetCotizacionResponse>
+      <ar:FEParamGetCotizacionResult>
+        <ar:ResultGet>
+          <ar:MonId>DOL</ar:MonId>
+          <ar:MonCotiz>1481.5</ar:MonCotiz>
+          <ar:FchCotiz>20260724</ar:FchCotiz>
+        </ar:ResultGet>
+      </ar:FEParamGetCotizacionResult>
+    </ar:FEParamGetCotizacionResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    const result = await getCotizacionOficial({ ambiente: "homologacion", auth, monedaId: "DOL" });
+
+    expect(result).toEqual({ monId: "DOL", monCotiz: 1481.5, fchCotiz: "2026-07-24" });
+  });
+
+  it("tira AfipError si AFIP rechaza la consulta", async () => {
+    stubFetchOnce(`<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="http://ar.gov.afip.dif.FEV1/">
+  <soapenv:Body>
+    <ar:FEParamGetCotizacionResponse>
+      <ar:FEParamGetCotizacionResult>
+        <ar:Errors>
+          <ar:Err><ar:Code>601</ar:Code><ar:Msg>Moneda inexistente</ar:Msg></ar:Err>
+        </ar:Errors>
+      </ar:FEParamGetCotizacionResult>
+    </ar:FEParamGetCotizacionResponse>
+  </soapenv:Body>
+</soapenv:Envelope>`);
+
+    await expect(
+      getCotizacionOficial({ ambiente: "homologacion", auth, monedaId: "XXX" })
+    ).rejects.toThrow(/Moneda inexistente/);
   });
 });

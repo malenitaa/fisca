@@ -47,7 +47,8 @@ se indique otra cosa:
 | `facturas:c` | 120 |
 | `facturas:e` | 60 |
 | `facturas:nc` (notas de crédito) | 30 |
-| `cotizacion` | 60 |
+| `cotizacion` (Factura E, WSFEX) | 60 |
+| `cotizacion-c` (Factura C, WSFE — RG 5616/2024, agregado 2026-07-27) | 60 |
 | `feedback` | 10 |
 
 El PIN en sí (`/api/auth/pin/verify`) tiene su propio mecanismo, más
@@ -100,3 +101,7 @@ prácticas" y "está certificado" son cosas distintas — no mezclarlas.
   `41369a9`) — defensa en profundidad, no explotable en la práctica
   porque el único caller real ya sanitizaba antes, pero la función de
   librería compartida no debía depender de eso.
+- **2026-07-27**: agregado `cotizacion-c` a la tabla de rate limiting
+  (endpoint nuevo, `/api/facturas/cotizacion`, para la cotización oficial
+  de moneda extranjera en Factura C). No es una revisión completa nueva
+  contra OWASP — solo se actualizó esta tabla.

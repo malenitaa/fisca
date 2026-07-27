@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CONCEPTOS, CONDICION_IVA_RECEPTOR, DOC_TIPOS } from "@/lib/afip/types";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { CONCEPTOS, CONDICION_IVA_RECEPTOR, DOC_TIPOS, MONEDAS } from "@/lib/afip/types";
 import { nuevaFacturaSchema } from "@/lib/validation";
 import { FacturaEmitidaSuccess } from "@/components/factura-emitida-success";
 
@@ -21,6 +21,29 @@ interface ItemRow {
 
 const emptyItem: ItemRow = { descripcion: "", cantidad: "1", precioUnitario: "" };
 
+/** "Ahora" en Argentina (UTC-3 fijo, sin horario de verano), independiente
+ * de la zona horaria del dispositivo del usuario. Mismo criterio que usa
+ * la validación del servidor en lib/validation.ts. */
+function ahoraArgentina(): Date {
+  return new Date(Date.now() - 3 * 60 * 60 * 1000);
+}
+
+function isoDe(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate()
+  ).padStart(2, "0")}`;
+}
+
+function isoHoy(): string {
+  return isoDe(ahoraArgentina());
+}
+
+function isoConOffset(dias: number): string {
+  const d = ahoraArgentina();
+  d.setUTCDate(d.getUTCDate() + dias);
+  return isoDe(d);
+}
+
 interface EmitResult {
   facturaId: string;
   cae: string;
@@ -36,9 +59,15 @@ export function NuevaFacturaForm() {
   const [clienteNombre, setClienteNombre] = useState("");
   const [condicionIva, setCondicionIva] = useState(5);
   const [items, setItems] = useState<ItemRow[]>([{ ...emptyItem }]);
+  const [fechaComprobante, setFechaComprobante] = useState(isoHoy);
   const [fechaServicioDesde, setFechaServicioDesde] = useState("");
   const [fechaServicioHasta, setFechaServicioHasta] = useState("");
   const [fechaVtoPago, setFechaVtoPago] = useState("");
+  const [monedaExtranjera, setMonedaExtranjera] = useState(false);
+  const [monedaId, setMonedaId] = useState(MONEDAS[0].value as string);
+  const [canMisMonExt, setCanMisMonExt] = useState<"S" | "N">("N");
+  const [monedaCotizacion, setMonedaCotizacion] = useState("");
+  const [cotizStatus, setCotizStatus] = useState<"idle" | "loading" | "error">("idle");
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -60,6 +89,22 @@ export function NuevaFacturaForm() {
     setCondicionIva(c.condicion_iva_id);
   }
 
+  const traerCotizacion = useCallback(async () => {
+    setCotizStatus("loading");
+    try {
+      const res = await fetch(`/api/facturas/cotizacion?moneda=${monedaId}`);
+      const body = (await res.json()) as { monCotiz?: number; error?: string };
+      if (res.ok && body.monCotiz) {
+        setMonedaCotizacion(String(body.monCotiz));
+        setCotizStatus("idle");
+      } else {
+        setCotizStatus("error");
+      }
+    } catch {
+      setCotizStatus("error");
+    }
+  }, [monedaId]);
+
   const total = useMemo(
     () =>
       items.reduce((sum, item) => {
@@ -69,6 +114,23 @@ export function NuevaFacturaForm() {
       }, 0),
     [items]
   );
+
+  // AFIP: hasta 5 días (Productos) o 10 días (Servicios/Prod. y Serv.) de
+  // diferencia respecto a hoy, en cualquier sentido.
+  const rangoFechaDias = concepto === 1 ? 5 : 10;
+  const fechaMin = isoConOffset(-rangoFechaDias);
+  const fechaMax = isoConOffset(rangoFechaDias);
+
+  // Si el concepto cambia y achica el rango permitido (10 → 5 días), una
+  // fecha ya elegida puede quedar fuera de rango. La recortamos al mismo
+  // tiempo que se cambia el concepto, no aparte en un efecto.
+  function handleConceptoChange(nuevoConcepto: number) {
+    setConcepto(nuevoConcepto);
+    const rango = nuevoConcepto === 1 ? 5 : 10;
+    const min = isoConOffset(-rango);
+    const max = isoConOffset(rango);
+    setFechaComprobante((prev) => (prev < min || prev > max ? isoHoy() : prev));
+  }
 
   const puedeEmitir = useMemo(() => {
     const hayItemValido = items.some(
@@ -85,8 +147,22 @@ export function NuevaFacturaForm() {
     ) {
       return false;
     }
+    if (monedaExtranjera && canMisMonExt === "N" && !(Number(monedaCotizacion) > 0)) {
+      return false;
+    }
     return true;
-  }, [items, docTipo, docNro, concepto, fechaServicioDesde, fechaServicioHasta, fechaVtoPago]);
+  }, [
+    items,
+    docTipo,
+    docNro,
+    concepto,
+    fechaServicioDesde,
+    fechaServicioHasta,
+    fechaVtoPago,
+    monedaExtranjera,
+    canMisMonExt,
+    monedaCotizacion,
+  ]);
 
   function scrollToField(path: string) {
     const el = document.querySelector<HTMLElement>(`[data-field="${path}"]`);
@@ -125,6 +201,11 @@ export function NuevaFacturaForm() {
       docNro: docTipo === 99 ? "0" : docNro,
       clienteNombre: clienteNombre || undefined,
       condicionIvaReceptorId: condicionIva,
+      fechaComprobante: fechaComprobante || undefined,
+      monedaId: monedaExtranjera ? monedaId : undefined,
+      canMisMonExt: monedaExtranjera ? canMisMonExt : undefined,
+      monedaCotizacion:
+        monedaExtranjera && canMisMonExt === "N" ? monedaCotizacion || undefined : undefined,
       items: items.map((it) => ({
         descripcion: capitalize(it.descripcion.trim()),
         cantidad: it.cantidad,
@@ -167,6 +248,9 @@ export function NuevaFacturaForm() {
     }
   }
 
+  const monedaSeleccionada = MONEDAS.find((m) => m.value === monedaId) ?? MONEDAS[0];
+  const simboloMoneda = monedaExtranjera ? monedaSeleccionada.symbol : "$";
+
   if (result) {
     const clienteLinea =
       docTipo === 99
@@ -182,7 +266,7 @@ export function NuevaFacturaForm() {
         ).padStart(8, "0")}`}
         cae={result.cae}
         caeVencimiento={result.caeVencimiento}
-        total={`$${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
+        total={`${simboloMoneda}${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}`}
         clienteLinea={clienteLinea}
         facturaId={result.facturaId}
         onReset={() => {
@@ -190,6 +274,12 @@ export function NuevaFacturaForm() {
           setItems([{ ...emptyItem }]);
           setDocNro("");
           setClienteNombre("");
+          setFechaComprobante(isoHoy());
+          setMonedaExtranjera(false);
+          setMonedaId(MONEDAS[0].value);
+          setCanMisMonExt("N");
+          setMonedaCotizacion("");
+          setCotizStatus("idle");
         }}
       />
     );
@@ -258,6 +348,25 @@ export function NuevaFacturaForm() {
         </div>
 
         <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
+          <label
+            data-field="fechaComprobante"
+            className="flex items-center justify-between px-4 py-3 text-sm"
+          >
+            <span className="text-neutral-500 dark:text-neutral-400">Fecha</span>
+            <input
+              type="date"
+              value={fechaComprobante}
+              min={fechaMin}
+              max={fechaMax}
+              onChange={(e) => setFechaComprobante(e.target.value)}
+              className="border-0 bg-transparent p-0 text-right text-base text-neutral-900 outline-none focus:ring-0 dark:text-neutral-100"
+            />
+          </label>
+          {fieldErrors["fechaComprobante"] && (
+            <p className="px-4 pb-2 text-sm text-red-600 dark:text-red-400">
+              {fieldErrors["fechaComprobante"]}
+            </p>
+          )}
           <label className="flex items-center justify-between px-4 py-3 text-sm">
             <span className="text-neutral-500 dark:text-neutral-400">Concepto</span>
             <div className="relative flex items-center">
@@ -265,7 +374,7 @@ export function NuevaFacturaForm() {
               <span className="text-neutral-400">›</span>
               <select
                 value={concepto}
-                onChange={(e) => setConcepto(Number(e.target.value))}
+                onChange={(e) => handleConceptoChange(Number(e.target.value))}
                 className="absolute inset-0 cursor-pointer opacity-0"
                 aria-label="Concepto"
               >
@@ -277,6 +386,121 @@ export function NuevaFacturaForm() {
               </select>
             </div>
           </label>
+          <label className="flex items-center justify-between px-4 py-3 text-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">Moneda extranjera</span>
+            <input
+              type="checkbox"
+              checked={monedaExtranjera}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setMonedaExtranjera(on);
+                if (!on) {
+                  setMonedaCotizacion("");
+                  setCotizStatus("idle");
+                }
+              }}
+              className="h-5 w-5 accent-[#003366] dark:accent-[#7bb0e0]"
+            />
+          </label>
+          {monedaExtranjera && (
+            <div
+              data-field="canMisMonExt"
+              className="space-y-3 bg-neutral-50 px-4 py-3 text-sm dark:bg-neutral-900/50"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500 dark:text-neutral-400">Moneda</span>
+                <select
+                  value={monedaId}
+                  onChange={(e) => setMonedaId(e.target.value)}
+                  className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                >
+                  {MONEDAS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  ¿Cómo se paga?
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCanMisMonExt("N")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                      canMisMonExt === "N"
+                        ? "border-[#003366] bg-[#003366]/10 text-[#003366] dark:border-[#7bb0e0] dark:bg-[#7bb0e0]/15 dark:text-[#7bb0e0]"
+                        : "border-neutral-200 bg-white text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300"
+                    }`}
+                  >
+                    En pesos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCanMisMonExt("S")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                      canMisMonExt === "S"
+                        ? "border-[#003366] bg-[#003366]/10 text-[#003366] dark:border-[#7bb0e0] dark:bg-[#7bb0e0]/15 dark:text-[#7bb0e0]"
+                        : "border-neutral-200 bg-white text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300"
+                    }`}
+                  >
+                    En {monedaSeleccionada.label.split(" ")[0]}
+                  </button>
+                </div>
+                {fieldErrors["canMisMonExt"] && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {fieldErrors["canMisMonExt"]}
+                  </p>
+                )}
+              </div>
+
+              {canMisMonExt === "N" ? (
+                <div data-field="monedaCotizacion">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Cotización (a pesos)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={traerCotizacion}
+                      disabled={cotizStatus === "loading"}
+                      className="text-xs font-semibold text-[#003366] disabled:opacity-50 dark:text-[#7bb0e0]"
+                    >
+                      {cotizStatus === "loading" ? "Buscando..." : "Traer oficial"}
+                    </button>
+                  </div>
+                  <input
+                    value={monedaCotizacion}
+                    onChange={(e) => setMonedaCotizacion(e.target.value)}
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    placeholder="Ej: 1481.00"
+                    className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1.5 text-base dark:border-neutral-700 dark:bg-neutral-900"
+                  />
+                  {fieldErrors["monedaCotizacion"] && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {fieldErrors["monedaCotizacion"]}
+                    </p>
+                  )}
+                  {cotizStatus === "error" && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                      No se pudo consultar la cotización oficial. Ingresala a mano.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  ARCA asigna automáticamente el tipo de cambio oficial (Banco Nación, día hábil
+                  anterior) al autorizar el comprobante.
+                </p>
+              )}
+            </div>
+          )}
           <label className="flex items-center justify-between px-4 py-3 text-sm">
             <span className="text-neutral-500 dark:text-neutral-400">Condición IVA</span>
             <div className="relative flex items-center">
@@ -422,7 +646,8 @@ export function NuevaFacturaForm() {
                     className="flex-1 border-0 bg-transparent p-0 text-[14px] font-medium text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100"
                   />
                   <span className="min-w-[5rem] text-right text-sm font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">
-                    ${subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    {simboloMoneda}
+                    {subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
@@ -484,10 +709,20 @@ export function NuevaFacturaForm() {
        * el tab bar (que es shrink-0), el Emitir se pega justo arriba. */}
       <div className="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
         <div className="mx-auto max-w-2xl px-4 py-3">
+          {monedaExtranjera && canMisMonExt === "N" && Number(monedaCotizacion) > 0 && (
+            <p className="mb-1 text-right text-xs text-neutral-500 dark:text-neutral-400">
+              ≈ $
+              {(total * Number(monedaCotizacion)).toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+              })}{" "}
+              ARS
+            </p>
+          )}
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-sm text-neutral-500 dark:text-neutral-400">Total</span>
             <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-              ${total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              {simboloMoneda}
+              {total.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </span>
           </div>
           <button
