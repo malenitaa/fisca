@@ -10,13 +10,29 @@ libreta de contactos — antes de asumir que algo "no está hecho", mirá
 primero `ARCHITECTURE.md` (que ya está al día) en vez de confiar en la
 sección "Pendiente" de más abajo a ciegas.
 
+## Para retomar mañana (2026-07-28)
+
+1. **Probar en homologación con datos reales** lo de hoy: fecha manual del
+   comprobante, moneda extranjera en Factura C (probar los dos casos —
+   pago en la misma moneda y en pesos), y el editar/borrar contacto. Nada
+   de esto se probó en browser esta sesión (ver por qué abajo).
+2. **Probar el build nativo (iOS)** — dijiste que lo ibas a hacer vos en
+   otro momento, no está hecho.
+3. Recién ahí, si todo anda: considerar el buscador en la libreta de
+   contactos (única cosa que quedó "evaluada pero no construida" de esta
+   sesión, ver el final del documento).
+
 ## Últimas features agregadas (sesión 2026-07-27, no probadas aún en browser real)
 
-Implementadas, con `tsc`/`eslint`/`vitest` (37 tests) en verde, pero
+Implementadas, con `tsc`/`eslint`/`vitest` (41 tests) en verde, pero
 **sin probar manualmente en un browser** porque este entorno no tenía
 `.env.local` con credenciales de Supabase reales para levantar el dev
 server y loguearse. Si sos la próxima sesión: probalas en homologación
-antes de asumir que están 100% listas para producción.
+antes de asumir que están 100% listas para producción. Ya está **pusheado**
+a `origin/claude/monotributista-afip-invoicing-est2pz` (dos commits:
+`3c1e5d0` fecha/moneda extranjera/historial, `9ca393f` editar/borrar
+contacto) — Vercel ya debería tener el deploy nuevo andando, solo falta
+probarlo con datos reales.
 
 - **Fecha manual del comprobante en Factura C**: antes siempre usaba la
   fecha de hoy; ahora es editable dentro del rango real que acepta ARCA
@@ -114,10 +130,11 @@ antes de asumir que están 100% listas para producción.
   riesgo de seguridad que se descartó a propósito. En su lugar hay un
   recordatorio simple + link a ARCA.
 - **No se construye un CRM de clientes, Pedidos ni Presupuestos** — la
-  tabla `clientes` que sí existe es deliberadamente liviana (se
-  autocompleta sola al facturar, no se edita a mano, no tiene UI propia
-  de alta/baja). Si en algún momento se pide un CRM de verdad, es una
-  decisión de producto aparte, no un agregado menor.
+  tabla `clientes` es deliberadamente liviana: se autocompleta sola al
+  facturar, y desde el 2026-07-27 se puede corregir nombre/condición IVA
+  o borrar un contacto (`/api/clientes/[id]`), pero no tiene alta manual
+  ni es un sistema de gestión. Si en algún momento se pide un CRM de
+  verdad, es una decisión de producto aparte, no un agregado menor.
 - **iOS/Android**: se terminó optando por **Capacitor** (repo
   `fisca-app`, wrapper sin lógica propia sobre este mismo backend) en vez
   de Swift/SwiftUI nativo o quedarse solo con la PWA — ver
